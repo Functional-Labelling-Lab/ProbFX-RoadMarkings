@@ -15,8 +15,6 @@ import Env ( Observables, Assign((:=)), (<:>), nil )
 import Inference.SIM ( runSimulate )
 import Sampler ( sampleIO )
 
-import Lib
-
 coinFlip
   :: (Observables env '["p"] Double
     , Observables env '["y"] Bool)
@@ -29,5 +27,5 @@ coinFlip = do
 main :: IO ()
 main = do
   let env = #p := [] <:> #y := [] <:> nil
-  (b, _) <- sampleIO $ runSimulate env coinFlip
+  (b, _) <- sampleIO $  runSimulate env coinFlip
   putStrLn $ show $ b
