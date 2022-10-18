@@ -8,7 +8,8 @@ This repository contains our attempt at developing a working model for auto labe
 ## How will this work?
 The long-term goal is to build the pipeline described below...
 
-![Pipeline drawio](https://user-images.githubusercontent.com/44177991/196542075-0f32ba91-a1d1-4473-98ee-bc60ddd092ee.png)
+![Pipeline drawio](https://user-images.githubusercontent.com/44177991/196551636-ffc268d2-25db-4bad-8f2f-d19663754dfd.png)
+
 
 ## File Structure
 ```bash
