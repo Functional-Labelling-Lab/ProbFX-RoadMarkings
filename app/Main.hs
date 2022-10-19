@@ -1,13 +1,11 @@
+--- Language Extensions & Imports
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE OverloadedLabels #-}
-
-module Main (main) where
+{-# LANGUAGE EmptyDataDecls #-}
 
 import Prog ( call )
 import Effects.ObsReader ( ObsReader(Ask) )
-import Model ( Model(Model), bernoulli, uniform )
+import Model ( Model(Model), normal' )
 import PrimDist ( PrimDist(BernoulliDist, UniformDist) )
 import Effects.Dist ( Dist(Dist) )
 import Data.Kind (Constraint)
@@ -15,17 +13,31 @@ import Env ( Observables, Assign((:=)), (<:>), nil )
 import Inference.SIM ( runSimulate )
 import Sampler ( sampleIO )
 
-coinFlip
-  :: (Observables env '["p"] Double
-    , Observables env '["y"] Bool)
-  => Model env es Bool
-coinFlip = do
-  p <- uniform 0 1 #p
-  y <- bernoulli p #y
-  return y
+--- Probabilistic Model
 
-main :: IO ()
-main = do
-  let env = #p := [] <:> #y := [] <:> nil
-  (b, _) <- sampleIO $  runSimulate env coinFlip
-  putStrLn $ show $ b
+data RoadSample = RoadSample 
+    { centerX :: Double 
+    , width :: Double
+    }
+
+--- Image processing
+
+data Image
+
+loadImage :: String -> Image
+loadImage = undefined
+
+
+renderImage :: RoadSample -> Image
+renderImage = undefined
+
+energyFunction :: Image -> Image -> Double
+energyFunction = undefined
+
+
+--- Training
+
+initDistributionParams :: Model env es RoadDistributionParams
+initDistributionParams = undefined
+
+--- Main code  
