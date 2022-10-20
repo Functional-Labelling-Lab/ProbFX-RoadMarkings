@@ -42,21 +42,40 @@ loadAndSave source dest = do
     Left msg -> putStrLn msg
     Right image -> writeImageExact PNG [] dest image
 
--- "ProphandEspa.PNG"
--- "wow.png"
-
 drawFnToImage :: (Int, Int) -> ((Float, Float) -> Float) -> Float -> Image VS RGB Word8
-drawFnToImage dim fn e = makeImage dim (\(x, y) -> PixelRGB 0 (solve (fn (fromIntegral x, fromIntegral y))) 0 )
+drawFnToImage dim fn e = makeImage dim (\(y, x) -> PixelRGB (value x y) (value x y) (value x y) )
   where
     solve :: Float -> Word8
     solve a = if abs a <= e then 255 else 0
+    value x y = solve (fn (fromIntegral x, fromIntegral y))
 
-drawFnToArray :: (Int, Int) -> ((Float, Float) -> Float) -> Float -> [Word8]
-drawFnToArray (a, b) fn e = [(\(x :: Int, y :: Int) -> solve (fn (fromIntegral x, fromIntegral y)) ) (x, 0) | x <- [0..a]]
+--- Probabilistic Model
+
+data RoadSample = RoadSample 
+    { centerX :: Double 
+    , width :: Double
+    }
+
+--- Image processing
+
+-- data Image
+
+loadImage :: String -> IO (Image VS RGB Word8)
+loadImage = readImageExact' PNG
+
+
+
+
+renderImage :: RoadSample -> (Int, Int) -> Image VS RGB Word8
+renderImage rs dim@(imWidth, imHeight) = drawFnToImage dim roadFn 0.0
   where
-    solve :: Float -> Word8
-    solve a = if abs a <= e then 255 else 0
+    roadFn (x, _) = if normalized x >= (realToFrac (centerX rs)) - halfRsWidth && normalized x <= (realToFrac (centerX rs)) + halfRsWidth then 0 else 1
+    normalized x = x / fromIntegral imWidth :: Float
+    halfRsWidth = (realToFrac (width rs)) / 2.0 :: Float
 
+
+-- energyFunction :: RoadSample -> Image -> Double
+-- energyFunction = undefined
 
 -- main :: IO ()
 -- main = do
@@ -68,4 +87,4 @@ drawFnToArray (a, b) fn e = [(\(x :: Int, y :: Int) -> solve (fn (fromIntegral x
   --   Right image -> writeImageExact PNG [] "wow.png" image
 
 main :: IO ()
-main = writeImageExact PNG [] "1.png" (drawFnToImage (1001, 1001) (\(x, y) -> (x-500) ^ 2 + (y-500) ^ 2 - 250000) 1000.0)
+main = writeImageExact PNG [] "1.png" (renderImage (RoadSample {centerX = 0.8, width = 0.2}) (100, 100))
