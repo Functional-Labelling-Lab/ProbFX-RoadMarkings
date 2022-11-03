@@ -74,7 +74,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		// std::cout << get_mean_pixel_value() << std::endl;
+		std::cout << get_mean_pixel_value() << std::endl;
 		// get_mean_pixel_value();
 		// float pv = get_mean_pixel_value();
 
@@ -562,59 +562,38 @@ void terminate_context()
 
 
 double get_mean_pixel_value() {
-	glfwSwapBuffers(context->window);
-	glfwPollEvents();
-	
-	std::clock_t    start;
+	// Get average value of the rendered pixels as the value of the deepest mipmap level
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, context->diffTexture);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-    start = std::clock();
-	// GLuint texture = ;
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    // Checking the size of the pixel
+    int deepestMipmapLevelWidth = -1, deepestMipmapLevelHeight = -1;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &deepestMipmapLevelWidth);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &deepestMipmapLevelHeight);
+    std::cout << deepestMipmapLevelWidth << std::endl;
+    std::cout << deepestMipmapLevelHeight << std::endl;
+    // glGetTexImage(GL_TEXTURE_2D, deepestLevel, GL_RGBA, GL_FLOAT, &pixel[0]);
 
-	// std::cout << "We got here at least" << std::endl;
+    // Times by 3 for RGB
+    GLfloat *pixels = new GLfloat[SCR_WIDTH * SCR_HEIGHT * 3];
 
-	GLuint ssbo;
-	glGenBuffers(1, &ssbo);
-	// Bind it to the GL_ARRAY_BUFFER target.
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
-	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-	// Allocate space for it (sizeof(positions) + sizeof(colors)).
-	int zero = 0;
-	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int),    // total size
-				&zero,                                  // no data
-				GL_DYNAMIC_COPY);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(size_t), 0, GL_DYNAMIC_COPY);
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);
-	// glBindImageTexture( 0, context->diffTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F );
-	// glActiveTexture(GL_TEXTURE1);
-	// glBindImageTexture( 1, textures[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8 );
-	// We then run the compute shader
-	glUseProgram(context->computeShader);
-	// glUniform1i(glGetUniformLocation(context->computeShader, "img1"), 0);
-	glDispatchCompute((GLuint)SCR_WIDTH, (GLuint)SCR_HEIGHT, 1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
 
-
-	// Make sure all buffers have been loaded
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	int mse = *(int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	// glGetBufferSubData(	GL_SHADER_STORAGE_BUFFER,
-	// 	0,
-	// 	sizeof(int),
-	// 	&mse);
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-	glDeleteBuffers(1, &ssbo);
-
-
-	std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
-	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT);
+    GLfloat cumR = 0;
+    GLfloat cumG = 0;
+    GLfloat cumB = 0;
+    for (int x = 0; x < SCR_WIDTH; x++)
+    {
+        for (int y = 0; y < SCR_HEIGHT; y++)
+        {
+            cumR += pixels[x*3 + y*SCR_WIDTH + 0];
+            cumG += pixels[x*3 + y*SCR_WIDTH + 1];
+            cumB += pixels[x*3 + y*SCR_WIDTH + 2];
+        }
+    }
+    std::cout << cumR + cumG + cumB << std::endl;    
+    return static_cast<double>(cumR + cumG + cumB) / (SCR_HEIGHT * SCHAR_WIDTH);
 }
 
 void APIENTRY glDebugOutput(GLenum source, 
