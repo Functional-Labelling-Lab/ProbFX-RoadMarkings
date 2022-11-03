@@ -70,17 +70,17 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		find_texture_difference();
 
 		// Render to screen for visual debugging
-		render_to_screen();
+		// render_to_screen();
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << get_mean_pixel_value() << std::endl;
+		// std::cout << get_mean_pixel_value() << std::endl;
 		// get_mean_pixel_value();
 		// float pv = get_mean_pixel_value();
 
 		// This is just for local rending
-		// glfwSwapBuffers(context->window);
-		// glfwPollEvents();
+		glfwSwapBuffers(context->window);
+		glfwPollEvents();
 		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 		// break;
@@ -233,7 +233,7 @@ void render_to_screen()
 	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
 	// Load diff texture	
 	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, context->targetTexture);	
+	glBindTexture(GL_TEXTURE_2D, context->diffTexture);	
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -292,10 +292,10 @@ void render_scene(struct scene *scene)
 	// This is done here because it depends on the scene
 	float ground_vertices[] = {
 			// positions                   // colors          // texture coords
-			planeSize, 0.0f, planeSize, 0.5f, 0.8f, 0.5f, scaleDown * planeSize * 1.0f, scaleDown * planeSize * 1.0f, // top right
-			planeSize, 0.0f, -planeSize, 0.5f, 0.8f, 0.5f, scaleDown * planeSize * 1.0f, 0.0f,												// bottom right
-			-planeSize, 0.0f, -planeSize, 0.5f, 0.8f, 0.5f, 0.0f, 0.0f,																								// bottom left
-			-planeSize, 0.0f, planeSize, 0.5f, 0.8f, 0.5f, 0.0f, scaleDown * planeSize * 1.0f													// top left
+			planeSize, 0.0f, planeSize, 1.0f, 1.0f, 1.0f, scaleDown * planeSize * 1.0f, scaleDown * planeSize * 1.0f, // top right
+			planeSize, 0.0f, -planeSize, 1.0f, 1.0f, 1.0f, scaleDown * planeSize * 1.0f, 0.0f,												// bottom right
+			-planeSize, 0.0f, -planeSize, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,																								// bottom left
+			-planeSize, 0.0f, planeSize, 1.0f, 1.0f, 1.0f, 0.0f, scaleDown * planeSize * 1.0f													// top left
 	};
 
 	GLuint ground_indices[] = {
@@ -332,7 +332,7 @@ void render_scene(struct scene *scene)
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
 
 	// Clear buffer
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Start using the screenShader shaders and link texture
@@ -613,8 +613,8 @@ double get_mean_pixel_value() {
 	glDeleteBuffers(1, &ssbo);
 
 
-	std::cout << static_cast<double>(mse / (SCR_WIDTH * SCR_HEIGHT)) << std::endl; 
-	return static_cast<double>(mse / (SCR_WIDTH * SCR_HEIGHT));
+	std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
+	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT);
 }
 
 void APIENTRY glDebugOutput(GLenum source, 
