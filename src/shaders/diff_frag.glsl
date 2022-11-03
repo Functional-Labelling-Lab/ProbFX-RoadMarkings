@@ -12,5 +12,5 @@ void main()
 	float g = abs(texture(texture2, TexCoords).y - texture(texture1, TexCoords).y);
 	float b = abs(texture(texture2, TexCoords).z - texture(texture1, TexCoords).z);  
 	float a = abs(texture(texture2, TexCoords).w - texture(texture1, TexCoords).w);  
-	FragColor = vec4(r,g,b,a);
+	FragColor = vec4(r,g,b,1);
 }

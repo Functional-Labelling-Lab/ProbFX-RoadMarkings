@@ -9,23 +9,23 @@ extern "C" {
 void set_target_img(const char* str);
 
 void render_scene(struct scene *scene);
-float get_mean_pixel_value();
+double get_mean_pixel_value();
 void find_texture_difference();
 
-int test_bed(float x, float y, float z, float pitch, float yaw, float roll, float roadWidth);
+int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth);
 
 struct scene
 {
 	struct camera
 	{
-		float x;
-		float y;
-		float z;
-		float pitch;
-		float yaw;
-		float roll;
+		double x;
+		double y;
+		double z;
+		double pitch;
+		double yaw;
+		double roll;
 	};
-	float roadWidth;
+	double roadWidth;
 	camera camera;
 };
 }
@@ -37,6 +37,7 @@ struct opengl_context
 	GLuint sceneShader;
 	GLuint diffShader;
 	GLuint outShader;
+	GLuint computeShader;
 	//Textures
 	GLuint grassTexture;
 	GLuint roadTexture;
@@ -54,9 +55,12 @@ struct opengl_context
 	GLuint sceneFBO;
 	GLuint diffFBO;
 
+	GLuint ssbo;
+
 	//Texture Buffers
 	GLuint sceneTexture;
-	GLuint diffTexture; 
+	GLuint diffTexture;
+	// GLuint outTexture;
 };
 
 void init_context();

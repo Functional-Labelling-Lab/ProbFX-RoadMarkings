@@ -12,12 +12,12 @@ import Foreign.C.String
 import Foreign
 
 data Camera = Camera
-    { x :: Float
-    , y :: Float
-    , z :: Float
-    , pitch :: Float
-    , yaw :: Float
-    , roll :: Float
+    { x :: Double
+    , y :: Double
+    , z :: Double
+    , pitch :: Double
+    , yaw :: Double
+    , roll :: Double
     } deriving (Generic, CStorable, Show)
 
 instance Storable Camera where
@@ -27,7 +27,7 @@ instance Storable Camera where
     sizeOf    = cSizeOf
 
 data Scene = Scene
-    { roadWidth :: Float
+    { roadWidth :: Double
     , camera :: Camera
     } deriving (Generic, CStorable, Show)
 
@@ -39,6 +39,6 @@ instance Storable Scene where
 
 foreign import ccall unsafe "render_scene" renderScene :: Ptr Scene -> IO ()
 foreign import ccall unsafe "set_target_img" setTargetImg :: CString -> IO ()
-foreign import ccall unsafe "test_bed" testBed :: Float -> Float -> Float -> Float -> Float -> Float -> Float -> IO Int32
-foreign import ccall unsafe "get_mean_pixel_value" getMeanPixelValue :: IO Float
+foreign import ccall unsafe "test_bed" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
+foreign import ccall unsafe "get_mean_pixel_value" getMeanPixelValue :: IO Double
 foreign import ccall unsafe "find_texture_difference" findTextureDifference :: IO ()
