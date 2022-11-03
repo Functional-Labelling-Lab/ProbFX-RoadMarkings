@@ -24,20 +24,19 @@
 
 #define _USE_MATH_DEFINES
 
-void APIENTRY glDebugOutput(GLenum source, 
-                            GLenum type, 
-                            GLuint id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam);
+void APIENTRY glDebugOutput(GLenum source,
+														GLenum type,
+														GLuint id,
+														GLenum severity,
+														GLsizei length,
+														const char *message,
+														const void *userParam);
 
 // settings
-const GLuint SCR_WIDTH = 100;
-const GLuint SCR_HEIGHT = 100;
+const GLuint SCR_WIDTH = 1000;
+const GLuint SCR_HEIGHT = 1000;
 
-opengl_context* context = NULL;
-
+opengl_context *context = NULL;
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth)
 {
@@ -51,17 +50,16 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	scene.camera.roll = roll;
 
 	// Seperate Load img function
-	set_target_img("/src/textures/rendered_road.jpg");
+	set_target_img("/src/textures/rendered_road2.jpg");
 
 	while (!glfwWindowShouldClose(context->window))
 	{
-		std::clock_t    start;
+		std::clock_t start;
 
 		start = std::clock();
 		// Test vars uncomment to move scene
 		// scene.camera.pitch -= 0.0003;
 		// scene.camera.x -= 0.001;
-
 
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
@@ -84,7 +82,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 		// break;
-
 	}
 	terminate_context();
 
@@ -169,20 +166,19 @@ void init_context()
 	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 1);
 	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(size_t), 0, GL_DYNAMIC_COPY);
 
-
-
 	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	// Load compute shader into memory	
+	// Load compute shader into memory
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./src/shaders/mse.computeshader", std::ios::in);
-	if(ComputeShaderStream.is_open()){
+	if (ComputeShaderStream.is_open())
+	{
 		std::stringstream sstr;
 		sstr << ComputeShaderStream.rdbuf();
 		ComputeShaderCode = sstr.str();
 		ComputeShaderStream.close();
 	}
 	// Compile the compute shader
-	char * prog = &ComputeShaderCode[0];
+	char *prog = &ComputeShaderCode[0];
 	GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
 	glShaderSource(mse_shader, 1, &prog, NULL);
 	glCompileShader(mse_shader);
@@ -220,22 +216,23 @@ GLuint load_texture(const char *str)
 }
 
 void render_to_screen()
-{	
-	if (!context) {	
-		init_context();	
-	}	
-	// Switch to screen output buffer	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
-	glClear(GL_COLOR_BUFFER_BIT);	
-	// Links texture locations to shaders (I think)	
-	glUseProgram(context->outShader);	
-	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
-	// Load diff texture	
-	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, context->targetTexture);	
-	// Draw it to whole screen	
-	glBindVertexArray(context->outVAO);	
+{
+	if (!context)
+	{
+		init_context();
+	}
+	// Switch to screen output buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	// Links texture locations to shaders (I think)
+	glUseProgram(context->outShader);
+	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);
+	// Load diff texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, context->diffTexture);
+	// Draw it to whole screen
+	glBindVertexArray(context->outVAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glfwSwapBuffers(context->window);
 	glfwPollEvents();
@@ -243,7 +240,8 @@ void render_to_screen()
 
 void find_texture_difference()
 {
-	if (!context) {
+	if (!context)
+	{
 		init_context();
 	}
 	// Switch to difference test_bed buffer and clear it
@@ -273,7 +271,8 @@ void find_texture_difference()
 
 void set_target_img(const char *str)
 {
-	if (!context) {
+	if (!context)
+	{
 		init_context();
 	}
 	context->targetTexture = load_texture(str);
@@ -281,7 +280,8 @@ void set_target_img(const char *str)
 
 void render_scene(struct scene *scene)
 {
-	if (!context) {
+	if (!context)
+	{
 		init_context();
 	}
 	// std::cout << "Rendering scene" << std::endl;
@@ -430,7 +430,7 @@ GLFWwindow *init_gl_and_get_window()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);  
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 	// glfw window creation
 	GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", NULL, NULL);
@@ -452,15 +452,18 @@ GLFWwindow *init_gl_and_get_window()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
 
-	int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
 		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-	} else {
-		std::cout << "We don't have debugging" << std::endl; 
+	}
+	else
+	{
+		std::cout << "We don't have debugging" << std::endl;
 	}
 	return window;
 }
@@ -560,106 +563,128 @@ void terminate_context()
 	glfwTerminate();
 }
 
+double get_mean_pixel_value()
+{
 
-double get_mean_pixel_value() {
-	glfwSwapBuffers(context->window);
-	glfwPollEvents();
-	
-	std::clock_t    start;
-
-    start = std::clock();
-	// GLuint texture = ;
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-	// std::cout << "We got here at least" << std::endl;
-
-	GLuint ssbo;
-	glGenBuffers(1, &ssbo);
-	// Bind it to the GL_ARRAY_BUFFER target.
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
-	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-	// Allocate space for it (sizeof(positions) + sizeof(colors)).
-	int zero = 0;
-	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int),    // total size
-				&zero,                                  // no data
-				GL_DYNAMIC_COPY);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(size_t), 0, GL_DYNAMIC_COPY);
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	
+	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);
-	// glBindImageTexture( 0, context->diffTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F );
-	// glActiveTexture(GL_TEXTURE1);
-	// glBindImageTexture( 1, textures[1], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA8 );
-	// We then run the compute shader
-	glUseProgram(context->computeShader);
-	// glUniform1i(glGetUniformLocation(context->computeShader, "img1"), 0);
-	glDispatchCompute((GLuint)SCR_WIDTH, (GLuint)SCR_HEIGHT, 1);
+	glBindTexture(GL_TEXTURE_2D, context->targetTexture);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
+	// Checking the size of the pixel
+	int deepestMipmapLevelWidth = -1, deepestMipmapLevelHeight = -1;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &deepestMipmapLevelWidth);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &deepestMipmapLevelHeight);
+	std::cout << deepestMipmapLevelWidth << std::endl;
+	std::cout << deepestMipmapLevelHeight << std::endl;
+	// glGetTexImage(GL_TEXTURE_2D, deepestLevel, GL_RGBA, GL_FLOAT, &pixel[0]);
 
-	// Make sure all buffers have been loaded
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	int mse = *(int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	// glGetBufferSubData(	GL_SHADER_STORAGE_BUFFER,
-	// 	0,
-	// 	sizeof(int),
-	// 	&mse);
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-	glDeleteBuffers(1, &ssbo);
+	// Times by 3 for RGB
+	GLfloat *pixels = new GLfloat[SCR_WIDTH * SCR_HEIGHT * 3];
 
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
 
-	std::cout << static_cast<double>(mse / (SCR_WIDTH * SCR_HEIGHT)) << std::endl; 
-	return static_cast<double>(mse / (SCR_WIDTH * SCR_HEIGHT));
+	GLfloat cumR = 0;
+	GLfloat cumG = 0;
+	GLfloat cumB = 0;
+	for (int x = 0; x < SCR_WIDTH; x++)
+	{
+		for (int y = 0; y < SCR_HEIGHT; y++)
+		{
+			cumR += pixels[x*3 + y*SCR_WIDTH + 0];
+			cumG += pixels[x*3 + y*SCR_WIDTH + 1];
+			cumB += pixels[x*3 + y*SCR_WIDTH + 2];
+		}
+	}
+	std::cout << cumR + cumG + cumB << std::endl;	
+	return cumR + cumG + cumB;
 }
 
-void APIENTRY glDebugOutput(GLenum source, 
-                            GLenum type, 
-                            GLuint id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam)
+void APIENTRY glDebugOutput(GLenum source,
+														GLenum type,
+														GLuint id,
+														GLenum severity,
+														GLsizei length,
+														const char *message,
+														const void *userParam)
 {
-    // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+	// ignore non-significant error/warning codes
+	if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+		return;
 
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
 
-    switch (source)
-    {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-    } std::cout << std::endl;
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:
+		std::cout << "Source: API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		std::cout << "Source: Window System";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		std::cout << "Source: Shader Compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		std::cout << "Source: Third Party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		std::cout << "Source: Application";
+		break;
+	case GL_DEBUG_SOURCE_OTHER:
+		std::cout << "Source: Other";
+		break;
+	}
+	std::cout << std::endl;
 
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-    } std::cout << std::endl;
-    
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-    } std::cout << std::endl;
-    std::cout << std::endl;
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		std::cout << "Type: Error";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		std::cout << "Type: Deprecated Behaviour";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		std::cout << "Type: Undefined Behaviour";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		std::cout << "Type: Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		std::cout << "Type: Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		std::cout << "Type: Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		std::cout << "Type: Push Group";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		std::cout << "Type: Pop Group";
+		break;
+	case GL_DEBUG_TYPE_OTHER:
+		std::cout << "Type: Other";
+		break;
+	}
+	std::cout << std::endl;
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:
+		std::cout << "Severity: high";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		std::cout << "Severity: medium";
+		break;
+	case GL_DEBUG_SEVERITY_LOW:
+		std::cout << "Severity: low";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		std::cout << "Severity: notification";
+		break;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
