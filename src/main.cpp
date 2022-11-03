@@ -74,7 +74,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		// std::cout << get_mean_pixel_value() << std::endl;
+		std::cout << get_mean_pixel_value() << std::endl;
 		// get_mean_pixel_value();
 		// float pv = get_mean_pixel_value();
 
