@@ -19,6 +19,6 @@ void main() {
   vec4 squared = pow(color1, vec4(2.0, 2.0, 2.0, 0.0));
   float sum = squared.r + squared.g + squared.b;
   int root = int(sqrt(sum) * 255.0);
-	
-  atomicAdd(Result, 1);
+
+  atomicAdd(Result, root);
 }
