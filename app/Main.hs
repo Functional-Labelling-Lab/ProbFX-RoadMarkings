@@ -42,14 +42,14 @@ initRoadSample :: (Observables env ["y", "roadWidth"] Double) => Model env es Sc
 initRoadSample = do
     -- x <- uniform (-0.5) 0.5 #x
     -- 0.6, 0, 0.2, 0
-    y <- uniform 0.2 1 #y
+    y <- uniform 0.0 0.4 #y
     -- z <- uniform (-0.01) 0.01 #z
     -- pitch <- uniform (-0.3) 0.3 #pitch
     -- yaw <- uniform (-0.01) 0.01 #yaw
     -- roll <- uniform (-0.01) 0.01 #roll
-    roadWidth <- uniform 0.2 0.7 #roadWidth
+    roadWidth <- uniform 0.0 0.5 #roadWidth
 
-    return $ Scene { camera = Camera {x=0, y=y, pitch=0, z=0, yaw=0, roll=0}, roadWidth=roadWidth }
+    return $ Scene { camera = Camera {x=0.2, y=y, pitch=(-0.1), z=0, yaw=0, roll=0}, roadWidth=roadWidth }
 
 roadGenerationModel :: (Observables env ["y", "roadWidth", "error"] Double) => () -> Model env es ()
 roadGenerationModel _ = do
@@ -89,26 +89,26 @@ errorFunction s = unsafePerformIO $ do
 
 --   print 5
 
-main :: IO () 
-main = print =<< testBed 0 0.6 0 0 0 0 0.6
+-- main :: IO () 
+-- main = print =<< testBed 0.2 0.2 0 (-0.1) 0 0 0.3
 
--- main :: IO Int
--- main = do
+main :: IO Int
+main = do
 
---     string <- newCString "/src/textures/rendered_road.jpg"
---     setTargetImg string
+    string <- newCString "/src/textures/rendered_road.jpg"
+    setTargetImg string
     
---     sampleIO $ do
+    sampleIO $ do
 
---         let mh_env = (#y := []) <:> (#roadWidth := []) <:> (#error := repeat 0) <:> nil
---         traceMHs <- mh 5000 roadGenerationModel ((), mh_env) ["y", "roadWidth"]
+        let mh_env = (#y := []) <:> (#roadWidth := []) <:> (#error := repeat 0) <:> nil
+        traceMHs <- mh 5000 roadGenerationModel ((), mh_env) ["y", "roadWidth"]
         
---         let ys = concatMap (get #y) traceMHs
+        let ys = concatMap (get #y) traceMHs
 
---         liftS $ print ys
+        liftS $ print ys
 
---         liftS $ print $ concatMap (get #roadWidth) traceMHs
+        liftS $ print $ concatMap (get #roadWidth) traceMHs
 
---         -- let exampleImage = renderImage (RoadSample centerX width) (100, 100)
---         -- liftS $ writeImageExact PNG [] "output2.png" exampleImage
---         return 0
+        -- let exampleImage = renderImage (RoadSample centerX width) (100, 100)
+        -- liftS $ writeImageExact PNG [] "output2.png" exampleImage
+        return 0
