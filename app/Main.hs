@@ -21,7 +21,7 @@ import Sampler ( sampleIO, liftS )
 import Data.List (partition)
 import Foreign
 import Foreign.C.String
-import MyLib
+import CppFFI
 import Foreign (Storable(..), StablePtr(..))
 import Foreign
 import Foreign.Marshal.Alloc
@@ -68,30 +68,12 @@ errorFunction s = unsafePerformIO $ do
     realToFrac <$> getMeanPixelValue
 
 
+testBedExample :: IO Int32
+testBedExample = testBed 0.2 0.2 0 (-0.1) 0 0 0.3
 
--- main :: IO ()
--- main = do
---   let s = Scene { camera = Camera {x=0.0, y=0.5, pitch=0.0, z=0.0, yaw=0.0, roll=0.0}, roadWidth=0.6 }
---   scene <- malloc
---   poke scene s
-
---   string <- newCString "/src/textures/rendered_road.jpg"
---   setTargetImg string
-  
---   renderScene scene
---   findTextureDifference
---   diff <- getMeanPixelValue
---   print diff
-
-
---   print 5
-
--- main :: IO () 
--- main = print =<< testBed 0.2 0.2 0 (-0.1) 0 0 0.3
-
-main :: IO Int
-main = do
-
+--- Run training loop
+trainModel :: IO ()
+trainModel = do
     string <- newCString "/src/textures/rendered_road.jpg"
     setTargetImg string
     
@@ -106,6 +88,6 @@ main = do
 
         liftS $ print $ concatMap (get #roadWidth) traceMHs
 
-        -- let exampleImage = renderImage (RoadSample centerX width) (100, 100)
-        -- liftS $ writeImageExact PNG [] "output2.png" exampleImage
-        return 0
+
+main :: IO ()
+main = trainModel

@@ -22,7 +22,7 @@ maintainer:         bcieslar2001@gmail.com
 extra-source-files: CHANGELOG.md
 
 library
-    exposed-modules:  MyLib
+    exposed-modules:  CppFFI
 
     -- Modules included in this library but not exported.
     -- other-modules:
@@ -34,7 +34,7 @@ library
     default-language: Haskell2010
     cxx-sources: src/glad.c src/main.cpp src/shaders.cpp
     cxx-options: -lstdc++fs -std=c++17
-    extra-libraries:     stdc++, glfw3, stdc++fs, X11
+    extra-libraries:     stdc++, glfw, stdc++fs, X11
 
 executable ProbFX-RoadMarkings
     buildable:        True

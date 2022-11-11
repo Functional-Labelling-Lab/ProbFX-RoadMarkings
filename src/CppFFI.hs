@@ -2,7 +2,7 @@
 
 
 
-module MyLib (Scene(..), Camera(..), renderScene, setTargetImg, testBed, getMeanPixelValue, findTextureDifference) where
+module CppFFI (Scene(..), Camera(..), renderScene, setTargetImg, testBed, getMeanPixelValue, findTextureDifference) where
 
 import GHC.Generics (Generic(..))
 import Foreign (Storable(..), Ptr(..))
