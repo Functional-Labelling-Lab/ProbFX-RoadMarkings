@@ -30,10 +30,7 @@ import OpenSum (Member)
 import System.IO.Unsafe
 
 clamp :: (Double, Double) -> Double -> Double
-clamp (a, b) x
-  | a > x = a
-  | b < x = b
-  | otherwise = x
+clamp (a, b) = (min b) . max a
 
 
 --- Training
