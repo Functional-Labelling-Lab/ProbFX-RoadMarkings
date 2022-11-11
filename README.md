@@ -44,6 +44,7 @@ sudo apt-get install libxmu-dev
 sudo apt-get install libblas-dev
 sudo apt-get install libglfw3
 sudo apt-get install libglfw3-dev
+sudo apt install libglm-dev
 ```
 
 And then, you'll need to run the following script to install glad:
