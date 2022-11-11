@@ -1,5 +1,6 @@
 source-repository-package
     type: git
     location: https://github.com/min-nguyen/prob-fx.git
+    tag: 7660c896bc5d2bda2229e93f1ec91052107a54d1
 
 packages: ./
