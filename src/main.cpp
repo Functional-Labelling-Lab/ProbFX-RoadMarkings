@@ -218,7 +218,7 @@ void render_to_screen()
 	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
 	// Load diff texture	
 	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, context->sceneTexture);	
+	glBindTexture(GL_TEXTURE_2D, context->diffTexture);	
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
