@@ -33,8 +33,8 @@ void APIENTRY glDebugOutput(GLenum source,
                             const void *userParam);
 
 // settings
-const GLuint SCR_WIDTH = 100;
-const GLuint SCR_HEIGHT = 100;
+const GLuint SCR_WIDTH = 1000;
+const GLuint SCR_HEIGHT = 1000;
 
 opengl_context* context = NULL;
 
@@ -58,19 +58,15 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		std::clock_t    start;
 
 		start = std::clock();
-		// Test vars uncomment to move scene
-		// scene.camera.pitch -= 0.0003;
-		// scene.camera.x -= 0.001;
-
 
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
-		// Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference();
+		// // Renders into diffFBO where the texture is in diffTexture
+		// find_texture_difference();
 
 		// Render to screen for visual debugging
-		// render_to_screen();
+		render_to_screen();
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -142,10 +138,6 @@ void init_context()
 	bind_diff_vertex_atts(context->diffVAO, context->diffVBO, context->diffEBO, diff_vertices, sizeof(diff_vertices), diff_indices, sizeof(diff_indices));
 	bind_diff_vertex_atts(context->outVAO, context->outVBO, context->outEBO, diff_vertices, sizeof(diff_vertices), diff_indices, sizeof(diff_indices));
 
-	// Load textures
-	context->grassTexture = load_texture("/src/textures/grass.jpg");
-	context->roadTexture = load_texture("/src/textures/road.jpg");
-
 	// Framebuffer configs
 	// Take size from struct todo
 	glGenFramebuffers(1, &context->sceneFBO);
@@ -165,13 +157,6 @@ void init_context()
 
 	context->ssbo = ssbo;
 
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 1);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(size_t), 0, GL_DYNAMIC_COPY);
-
-
-
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
 	// Load compute shader into memory	
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./src/shaders/mse.computeshader", std::ios::in);
@@ -292,10 +277,10 @@ void render_scene(struct scene *scene)
 	// This is done here because it depends on the scene
 	float ground_vertices[] = {
 			// positions                   // colors          // texture coords
-			planeSize, 0.0f, planeSize, 1.0f, 1.0f, 1.0f, scaleDown * planeSize * 1.0f, scaleDown * planeSize * 1.0f, // top right
-			planeSize, 0.0f, -planeSize, 1.0f, 1.0f, 1.0f, scaleDown * planeSize * 1.0f, 0.0f,												// bottom right
-			-planeSize, 0.0f, -planeSize, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,																								// bottom left
-			-planeSize, 0.0f, planeSize, 1.0f, 1.0f, 1.0f, 0.0f, scaleDown * planeSize * 1.0f													// top left
+			planeSize, 0.0f, planeSize, 1.0f,   // top right
+			planeSize, 0.0f, -planeSize, 1.0f, 									// bottom right
+			-planeSize, 0.0f, -planeSize, 1.0f,																				// bottom left
+			-planeSize, 0.0f, planeSize, 1.0f								// top left
 	};
 
 	GLuint ground_indices[] = {
@@ -306,10 +291,10 @@ void render_scene(struct scene *scene)
 	float roadWidth = 0.3;
 	float road_vertices[] = {
 			// positions                        // colors         // texture coords
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.2f, 0.2f, 0.2f, 1.0f, scaleDown * planeSize * 1.0f, // top right
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.2f, 0.2f, 0.2f, 1.0f, 0.0f,												 // bottom right
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.2f, 0.2f, 0.2f, 0.0f, 0.0f,											 // bottom left
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.2f, 0.2f, 0.2f, 0.0f, scaleDown * planeSize * 1.0f // top left
+			static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f,  // top right
+			static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,											 // bottom right
+			-static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,								 // bottom left
+			-static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f // top left
 	};
 
 	GLuint road_indices[] = {
@@ -360,14 +345,10 @@ void render_scene(struct scene *scene)
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 	// Render ground
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->grassTexture);
 	glBindVertexArray(VAOs[0]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	// Render road
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->roadTexture);
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -453,6 +434,7 @@ void bind_texture(GLuint *texture, char *location)
 
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
+	int total_size =  4 * sizeof(float);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -484,16 +466,12 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
 
 	// Position 3D
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
 	glEnableVertexAttribArray(0);
 
 	// Colour
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-
-	// Texture coord
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
