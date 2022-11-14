@@ -1,24 +1,36 @@
 #version 430 core
 layout(local_size_x = 1, local_size_y = 1) in;
-layout(binding = 0) uniform sampler2D img1;
-//layout(rgba8, binding = 1) uniform image2D img2;
-layout (binding = 1, std430) buffer OutputBlock { int Result; };
+layout(rgba32f, binding = 0) uniform image2D img1;
+layout (binding = 1, std430) buffer OutputBlock { int[] Result; };
 
 void main() {
 
 
   // get index in global work group i.e x,y position
-  ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+  int x = int(gl_GlobalInvocationID.x);
 
-  vec2 screenNormalized = vec2(pixel_coords) / vec2(100.0, 100.0); // ctxSize is the size of the depth and color textures
-  vec4 color1 = texture(img1, screenNormalized);
+  ivec2 size = ivec2(imageSize(img1));
+  int total_size = size.x * size.y;
 
-  //vec4 color2 = imageLoad(img2, pixel_coords);
+  ivec2 pixel_coords = ivec2(x / size.x, x % size.y);
 
-  //vec4 sub = color1 - color2;
-  vec4 squared = pow(color1, vec4(2.0, 2.0, 2.0, 0.0));
-  float sum = squared.r + squared.g + squared.b;
-  int root = int(sqrt(sum) * 255.0);
+  vec4 color1 = imageLoad(img1, pixel_coords);
 
-  atomicAdd(Result, root);
+  int sum = int(color1.r * 255.0) + int(color1.g * 255.0) + int(color1.b * 255.0);
+
+  Result[x] = sum;
+
+  memoryBarrier();
+  barrier();
+
+  for (int s=1; s < total_size; s *= 2) {
+    if (x % (s * 2) == 0 && x + s < total_size) {
+      Result[x] += Result[x + s];
+    }
+
+    memoryBarrier();
+    barrier();
+  } 
+
+  // int root = int(sqrt(sum) * 255.0);
 }

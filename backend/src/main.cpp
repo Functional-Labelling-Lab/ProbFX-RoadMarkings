@@ -84,6 +84,12 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 void init_context()
 {
+	#ifdef OGL4
+	std::cout << "Using OpenGL 4" << std::endl;
+	#else
+	std::cout << "Using OpenGL 3" << std::endl;
+	#endif
+
 	context = new opengl_context;
 	context->window = init_gl_and_get_window();
 
@@ -160,15 +166,23 @@ void init_context()
 		ComputeShaderCode = sstr.str();
 		ComputeShaderStream.close();
 	}
+
 	// Compile the compute shader
 	char * prog = &ComputeShaderCode[0];
 	GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
 	glShaderSource(mse_shader, 1, &prog, NULL);
 	glCompileShader(mse_shader);
+	GLsizei log_length = 0;
+    GLchar message[1024];
+    glGetShaderInfoLog(mse_shader, 1024, &log_length, message);
 	// Link the compute shader
 	GLuint mse_program = glCreateProgram();
 	glAttachShader(mse_program, mse_shader);
 	glLinkProgram(mse_program);
+
+
+	std::cout << message << std::endl;
+
 
 	context->computeShader = mse_program;
 
@@ -180,7 +194,7 @@ void bind_frame_buffer(GLuint FBO, GLuint textureBuffer)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glBindTexture(GL_TEXTURE_2D, textureBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureBuffer, 0);
@@ -241,7 +255,6 @@ void find_texture_difference(GLuint texture1,GLuint texture2)
 
 	// Switch to screen output buffer for safety to stop anything else being rendered to the FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	render_to_screen(context->diffTexture);
 }
 
 void set_target_img(const char *str)
@@ -363,7 +376,11 @@ GLFWwindow *init_gl_and_get_window()
 {
 	// glfw: initialize and configure
 	glfwInit();
+	#ifdef OGL4
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	#else
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	#endif
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -416,7 +433,7 @@ void bind_texture(GLuint *texture, char *location)
 	unsigned char *data = stbi_load(location, &width, &height, &nrChannels, 0);
 	if (data)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
@@ -484,8 +501,60 @@ void terminate_context()
 	glfwTerminate();
 }
 
+#ifdef OGL4
+double get_mean_pixel_value() {
+	
+	std::clock_t    start;
 
-double get_mean_pixel_value(GLuint texture) {
+    start = std::clock();
+
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
+	// glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Checking the size of the pixel
+	int compress_depth = 0;
+	int mipmapLevelWidth = -1, mipmapLevelHeight = -1;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_WIDTH, &mipmapLevelWidth);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT, &mipmapLevelHeight);
+	std::cout << mipmapLevelWidth << std::endl;
+	std::cout << mipmapLevelHeight << std::endl;
+
+	GLuint ssbo;
+	glGenBuffers(1, &ssbo);
+	// Bind it to the GL_ARRAY_BUFFER target.
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+
+	// Allocate space for it (sizeof(positions) + sizeof(colors)).
+	int zero = 0;
+	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
+				sizeof(int) * mipmapLevelWidth * mipmapLevelHeight,    // total size
+				NULL,                                  // no data
+				GL_DYNAMIC_READ_ARB); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
+
+
+	// We then run the compute shader
+	glUseProgram(context->computeShader);
+	glDispatchCompute((GLuint)mipmapLevelWidth * mipmapLevelHeight , 1, 1);
+
+
+	// Make sure all buffers have been loaded
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	int mse = *(int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	glDeleteBuffers(1, &ssbo);
+
+
+	std::cout << static_cast<double>(mse) / (mipmapLevelWidth * mipmapLevelHeight) << std::endl; 
+	return static_cast<double>(mse);
+}
+#else
+double get_mean_pixel_value() {
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -504,21 +573,22 @@ double get_mean_pixel_value(GLuint texture) {
 
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, pixels);
 
-	GLfloat cumR = 0;
-	GLfloat cumG = 0;
-	GLfloat cumB = 0;
+	int cumR = 0;
+	int cumG = 0;
+	int cumB = 0;
 	for (int x = 0; x < mipmapLevelWidth; x++)
 	{
 		for (int y = 0; y < mipmapLevelHeight; y++)
 		{
-			cumR += pixels[x*3 + y*mipmapLevelWidth + 0];
-			cumG += pixels[x*3 + y*mipmapLevelWidth + 1];
-			cumB += pixels[x*3 + y*mipmapLevelWidth + 2];
+			cumR += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 0] * 255);
+			cumG += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 1] * 255);
+			cumB += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 2] * 255);
 		}
 	}
 	std::cout << cumR + cumG + cumB << std::endl;	
-	return cumR + cumG + cumB;
+	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
+#endif
 
 void APIENTRY glDebugOutput(GLenum source, 
                             GLenum type, 
