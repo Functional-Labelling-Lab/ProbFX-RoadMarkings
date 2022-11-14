@@ -56,6 +56,7 @@ struct opengl_context
 	GLuint diffFBO;
 
 	GLuint ssbo;
+	int* ssbo_map;
 
 	//Texture Buffers
 	GLuint sceneTexture;
