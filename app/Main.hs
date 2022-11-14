@@ -64,7 +64,7 @@ errorFunction s = unsafePerformIO $ do
     poke scene s
 
     renderScene scene
-    findTextureDifference
+    -- findTextureDifference
     realToFrac <$> getMeanPixelValue
 
 
@@ -90,4 +90,4 @@ trainModel = do
 
 
 main :: IO ()
-main = trainModel
+main = print =<< testBedExample

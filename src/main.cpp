@@ -554,7 +554,7 @@ double get_mean_pixel_value() {
 
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
-	glDispatchCompute((GLuint)mipmapLevelWidth * mipmapLevelHeight , 1, 1);
+	glDispatchCompute((GLuint)(mipmapLevelWidth * mipmapLevelHeight) / (1024 * 2), 1, 1);
 
 
 	// Make sure all buffers have been loaded
