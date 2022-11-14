@@ -9,8 +9,8 @@ extern "C" {
 void set_target_img(const char* str);
 
 void render_scene(struct scene *scene);
-double get_mean_pixel_value();
-void find_texture_difference();
+double get_mean_pixel_value(GLuint texture);
+void find_texture_difference(GLuint texture1,GLuint texture2);
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth);
 
@@ -70,7 +70,7 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_texture(GLuint *texture, char *location);
 void get_path(const char *target, char *dest);
-void render_to_screen();
+void render_to_screen(GLuint texture);
 GLuint load_texture(const char *str);
 void bind_frame_buffer(GLuint FBO, GLuint textureBuffer);
 void terminate_context();

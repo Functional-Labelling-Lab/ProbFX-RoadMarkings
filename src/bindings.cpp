@@ -1,6 +1,8 @@
 #include "bindings.h"
 #include "main.h"
 
+extern opengl_context* context;
+
 void render_scene_c(struct scene *scene) {
 	render_scene(scene);
 }
@@ -11,8 +13,17 @@ int test_bed_c(double x, double y, double z, double pitch, double yaw, double ro
 	return test_bed(x,y,z,pitch,yaw,roll,roadWidth);
 }
 double get_mean_pixel_value_c() {
-	return get_mean_pixel_value();
+	if (context == NULL) {
+		//Throw Error
+		return -1;
+	}
+	return get_mean_pixel_value(context->diffTexture);
 }
 void find_texture_difference_c() {
-	find_texture_difference();
+	if (context == NULL) {
+		//Throw Error
+	} else {
+		find_texture_difference(context->sceneTexture,context->targetTexture);
+	}
+
 } 

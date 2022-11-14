@@ -15,7 +15,6 @@
 
 #include "shaders.h"
 #include "main.h"
-#include "bindings.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -67,13 +66,11 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		// find_texture_difference();
 
 		// Render to screen for visual debugging
-		render_to_screen();
+		render_to_screen(context->sceneTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << get_mean_pixel_value() << std::endl;
-		// get_mean_pixel_value();
-		// float pv = get_mean_pixel_value();
+		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
 
 		// This is just for local rending
 		glfwSwapBuffers(context->window);
@@ -205,7 +202,7 @@ GLuint load_texture(const char *str)
 	return texture;
 }
 
-void render_to_screen()
+void render_to_screen(GLuint texture)
 {	
 	if (!context) {	
 		init_context();	
@@ -219,7 +216,7 @@ void render_to_screen()
 	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
 	// Load diff texture	
 	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);	
+	glBindTexture(GL_TEXTURE_2D, texture);	
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -227,7 +224,7 @@ void render_to_screen()
 	glfwPollEvents();
 }
 
-void find_texture_difference()
+void find_texture_difference(GLuint texture1,GLuint texture2)
 {
 	if (!context) {
 		init_context();
@@ -244,9 +241,9 @@ void find_texture_difference()
 
 	// Load textures
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->sceneTexture);
+	glBindTexture(GL_TEXTURE_2D, texture1);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, context->targetTexture);
+	glBindTexture(GL_TEXTURE_2D, texture2);
 
 	// Get image difference and draw it to whole buffer
 	glBindVertexArray(context->diffVAO);
@@ -254,7 +251,7 @@ void find_texture_difference()
 
 	// Switch to screen output buffer for safety to stop anything else being rendered to the FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	render_to_screen();
+	render_to_screen(context->diffTexture);
 }
 
 void set_target_img(const char *str)
@@ -502,10 +499,10 @@ void terminate_context()
 }
 
 
-double get_mean_pixel_value() {
+double get_mean_pixel_value(GLuint texture) {
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Checking the size of the pixel
