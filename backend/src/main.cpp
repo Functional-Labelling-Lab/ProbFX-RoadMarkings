@@ -53,9 +53,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 	while (!glfwWindowShouldClose(context->window))
 	{
-		std::clock_t    start;
-
-		start = std::clock();
 
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
@@ -73,7 +70,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		// This is just for local rending
 		glfwSwapBuffers(context->window);
 		glfwPollEvents();
-		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 		// break;
 	}
@@ -179,6 +175,17 @@ void init_context()
 	GLuint mse_program = glCreateProgram();
 	glAttachShader(mse_program, mse_shader);
 	glLinkProgram(mse_program);
+
+	glGenBuffers(1, &context->ssbo);
+	// Bind it to the GL_ARRAY_BUFFER target.
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
+
+	// Allocate space for it (sizeof(positions) + sizeof(colors)).
+	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
+				sizeof(int) * SCR_WIDTH * SCR_HEIGHT,    // total size
+				NULL,                                  // no data
+				GL_STATIC_READ); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
 
 	std::cout << message << std::endl;
@@ -498,59 +505,52 @@ void terminate_context()
 
 	glDeleteBuffers(1, &context->sceneFBO);
 	glDeleteBuffers(1, &context->diffFBO);
+
+	glDeleteBuffers(1, &context->ssbo);
+
 	glfwTerminate();
 }
 
 #ifdef OGL4
 double get_mean_pixel_value() {
 	
-	std::clock_t    start;
-
-    start = std::clock();
 
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
-	// glGenerateMipmap(GL_TEXTURE_2D);
 
-	// Checking the size of the pixel
-	int compress_depth = 0;
-	int mipmapLevelWidth = -1, mipmapLevelHeight = -1;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_WIDTH, &mipmapLevelWidth);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT, &mipmapLevelHeight);
-	std::cout << mipmapLevelWidth << std::endl;
-	std::cout << mipmapLevelHeight << std::endl;
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
-	GLuint ssbo;
-	glGenBuffers(1, &ssbo);
-	// Bind it to the GL_ARRAY_BUFFER target.
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo);
+	std::clock_t    start;
 
-	// Allocate space for it (sizeof(positions) + sizeof(colors)).
-	int zero = 0;
-	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int) * mipmapLevelWidth * mipmapLevelHeight,    // total size
-				NULL,                                  // no data
-				GL_DYNAMIC_READ_ARB); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 1);
-
-
+    start = std::clock();
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
-	glDispatchCompute((GLuint)(mipmapLevelWidth * mipmapLevelHeight) / (1024 * 2), 1, 1);
+	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
 
 
 	// Make sure all buffers have been loaded
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	int mse = *(int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
+
+	// int mse;
+	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
+	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
+	// glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), &mse);
+
+
+	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
+	
+	int mse = *(int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT);
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	glDeleteBuffers(1, &ssbo);
+	// int mse = 0;
 
 
-	std::cout << static_cast<double>(mse) / (mipmapLevelWidth * mipmapLevelHeight) << std::endl; 
+	std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
 	return static_cast<double>(mse);
 }
 #else

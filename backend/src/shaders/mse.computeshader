@@ -41,7 +41,6 @@ void main() {
     barrier();
   } 
 
-  // barrier();
 
   // if (tid < 32) {
   //   Result[x] += Result[x + 32];
@@ -62,4 +61,6 @@ void main() {
   if (tid == 0 && x != 0) {
     atomicAdd(Result[0], Result[x]);
   }
+
+  // Result[0] = 1;
 }
