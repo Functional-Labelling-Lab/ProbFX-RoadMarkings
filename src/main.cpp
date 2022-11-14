@@ -15,6 +15,7 @@
 
 #include "shaders.h"
 #include "main.h"
+#include "bindings.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -514,7 +515,6 @@ double get_mean_pixel_value() {
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT, &mipmapLevelHeight);
 	std::cout << mipmapLevelWidth << std::endl;
 	std::cout << mipmapLevelHeight << std::endl;
-	// glGetTexImage(GL_TEXTURE_2D, deepestLevel, GL_RGBA, GL_FLOAT, &pixel[0]);
 
 	// Times by 3 for RGB
 	GLfloat *pixels = new GLfloat[mipmapLevelWidth * mipmapLevelHeight * 3];
