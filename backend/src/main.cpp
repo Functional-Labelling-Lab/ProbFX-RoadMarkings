@@ -54,7 +54,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	while (!glfwWindowShouldClose(context->window))
 	{
 
-		scene.camera.roll += 0.1;
 
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
