@@ -57,7 +57,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		render_scene(&scene);
 
 		// Renders into diffFBO where the texture is in diffTexture
-		// find_texture_difference(context->sceneTexture,context->targetTexture);
+		find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
 		render_to_screen(context->sceneTexture);
@@ -185,11 +185,11 @@ void init_context()
 
 	// Allocate space for it (sizeof(positions) + sizeof(colors)).
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int) * SCR_WIDTH * SCR_HEIGHT,    // total size
+				sizeof(int),    // total size
 				NULL,                                  // no data
-				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
-	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT);
+	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
 	std::cout << message << std::endl;
 
@@ -239,7 +239,7 @@ void render_to_screen(GLuint texture)
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	glfwSwapBuffers(context->window);
+	// glfwSwapBuffers(context->window);
 	glfwPollEvents();
 }
 
@@ -520,7 +520,7 @@ void terminate_context()
 }
 
 #ifdef OGL4
-double get_mean_pixel_value() {
+double get_mean_pixel_value(GLuint texture) {	
 	
 
 	
@@ -539,19 +539,8 @@ double get_mean_pixel_value() {
 
 
 	// Make sure all buffers have been loaded
-	glMemoryBarrier(GL_ALL_BARRIER_BITS);
+	glFinish();
 
-
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-
-	// int mse;
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
-	// glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), &mse);
-
-
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-	
 	int mse = *(context->ssbo_map);
 	// glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	// int mse = 0;
