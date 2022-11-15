@@ -46,7 +46,7 @@ initRoadSample = do
     -- roll <- uniform (-0.01) 0.01 #roll
     roadWidth <- uniform 0.0 0.5 #roadWidth
 
-    return $ Scene { camera = Camera {x=0.2, y=y, pitch=(-0.1), z=0, yaw=0, roll=0}, roadWidth=roadWidth }
+    return $ Scene { camera = Camera {x=0.2, y=y, pitch=(-0.1), z=0, yaw=0, roll=0} }
 
 roadGenerationModel :: (Observables env ["y", "roadWidth", "error"] Double) => () -> Model env es ()
 roadGenerationModel _ = do
@@ -90,4 +90,7 @@ trainModel = do
 
 
 main :: IO ()
-main = print =<< testBedExample
+main = trainModel
+
+-- main :: IO Int32
+-- main = testBedExample

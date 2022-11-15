@@ -38,11 +38,9 @@ const GLuint SCR_HEIGHT = 1000;
 
 opengl_context* context = NULL;
 
-
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth)
 {
 	struct scene scene;
-	scene.roadWidth = roadWidth;
 	scene.camera.x = x;
 	scene.camera.y = y;
 	scene.camera.z = z;
@@ -61,28 +59,19 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
-		// // Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference();
+		// Renders into diffFBO where the texture is in diffTexture
+		// find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
-		render_to_screen();
-		glfwSwapBuffers(context->window);
-		glfwPollEvents();
-		std::clock_t    start;
-
-		start = std::clock();
+		render_to_screen(context->sceneTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << get_mean_pixel_value() << std::endl;
-		// get_mean_pixel_value();
-		// float pv = get_mean_pixel_value();
-		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
 
 		// This is just for local rending
 
 		// break;
-
 	}
 	terminate_context();
 
@@ -109,6 +98,7 @@ void init_context()
 	// out shader
 	context->outShader = load_shader("/src/shaders/out_vert.glsl", "/src/shaders/out_frag.glsl");
 
+	//For drawing onto a box the fits the whole screen to show our texture
 	float diff_vertices[] = {
 			// positions   // texture coords
 			1.0f, 1.0f, 1.0f, 1.0f,		// top right
@@ -152,7 +142,6 @@ void init_context()
 	glGenTextures(1, &context->sceneTexture);
 	glGenFramebuffers(1, &context->diffFBO);
 	glGenTextures(1, &context->diffTexture);
-	// glCreateTextures(GL_TEXTURE_2D, 1, &context->diffTexture);
 
 	// Stage one buffer (Scene)
 	bind_frame_buffer(context->sceneFBO, context->sceneTexture);
@@ -232,11 +221,8 @@ GLuint load_texture(const char *str)
 	return texture;
 }
 
-void render_to_screen()
+void render_to_screen(GLuint texture)
 {	
-	if (!context) {	
-		init_context();	
-	}	
 	// Switch to screen output buffer	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
@@ -246,7 +232,7 @@ void render_to_screen()
 	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
 	// Load diff texture	
 	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);	
+	glBindTexture(GL_TEXTURE_2D, texture);	
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -254,11 +240,8 @@ void render_to_screen()
 	glfwPollEvents();
 }
 
-void find_texture_difference()
+void find_texture_difference(GLuint texture1,GLuint texture2)
 {
-	if (!context) {
-		init_context();
-	}
 	// Switch to difference test_bed buffer and clear it
 	glBindFramebuffer(GL_FRAMEBUFFER, context->diffFBO);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -271,9 +254,9 @@ void find_texture_difference()
 
 	// Load textures
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->sceneTexture);
+	glBindTexture(GL_TEXTURE_2D, texture1);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, context->targetTexture);
+	glBindTexture(GL_TEXTURE_2D, texture2);
 
 	// Get image difference and draw it to whole buffer
 	glBindVertexArray(context->diffVAO);
@@ -281,47 +264,50 @@ void find_texture_difference()
 
 	// Switch to screen output buffer for safety to stop anything else being rendered to the FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	render_to_screen(context->diffTexture);
 }
 
 void set_target_img(const char *str)
 {
-	if (!context) {
-		init_context();
-	}
 	context->targetTexture = load_texture(str);
+}
+
+
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
+	sceneVertex vertex; 
+	vertex.x = x; 
+	vertex.y = y;
+	vertex.z = z;
+	return vertex;
 }
 
 void render_scene(struct scene *scene)
 {
-	if (!context) {
-		init_context();
-	}
-	// std::cout << "Rendering scene" << std::endl;
-	// std::cout << scene->roadWidth << std::endl;
 	float planeSize = 100.0f;
-	float scaleDown = 2;
 
 	// This is done here because it depends on the scene
-	float ground_vertices[] = {
-			// positions                   // colors          // texture coords
-			planeSize, 0.0f, planeSize, 1.0f,   // top right
-			planeSize, 0.0f, -planeSize, 1.0f, 									// bottom right
-			-planeSize, 0.0f, -planeSize, 1.0f,																				// bottom left
-			-planeSize, 0.0f, planeSize, 1.0f								// top left
+	sceneVertex ground_vertices[] = {
+			// positions       
+			create_vertex(planeSize, 0.0f, planeSize),   // top right
+			create_vertex(planeSize, 0.0f, -planeSize),  // bottom right
+			create_vertex(-planeSize, 0.0f, -planeSize), // bottom left
+			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
 	};
+
+
 
 	GLuint ground_indices[] = {
 			0, 1, 3, // first triangle
 			1, 2, 3	 // second triangle
 	};
 
-	float roadWidth = 0.3;
-	float road_vertices[] = {
-			// positions                        // colors         // texture coords
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f,  // top right
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,											 // bottom right
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,								 // bottom left
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f // top left
+	float roadWidth = 0.15;
+	sceneVertex road_vertices[] = {
+			// positions                        			
+			create_vertex(roadWidth, 0.0f, planeSize),   // top right
+			create_vertex(roadWidth, 0.0f, -planeSize),	 // bottom right
+			create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
+			create_vertex(-roadWidth, 0.0f, planeSize)   // top left
 	};
 
 	GLuint road_indices[] = {
@@ -338,7 +324,7 @@ void render_scene(struct scene *scene)
 
 	glm::mat4 model, view, projection;
 	glm::vec3 cameraPos, cameraTarget;
-	int modelLoc, viewLoc, projectionLoc;
+	int modelLoc, viewLoc, projectionLoc, channelLoc;
 
 	// Bind to framebuffer so images displayed there rather than screen
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
@@ -357,6 +343,7 @@ void render_scene(struct scene *scene)
 
 	// View Transformation -- Calculated by picking a position and a point to look at
 	cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
+	
 	cameraTarget = glm::vec3(-scene->camera.x, scene->camera.y + sin((M_PI / 2) * scene->camera.pitch), scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
 	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0, 1.0, 0.0));
 
@@ -370,12 +357,17 @@ void render_scene(struct scene *scene)
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	projectionLoc = glGetUniformLocation(context->sceneShader, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+	channelLoc = glGetUniformLocation(context->sceneShader, "channel");
 
 	// Render ground
+	// Set channel to 1
+	glUniform1i(channelLoc,1);
 	glBindVertexArray(VAOs[0]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	// Render road
+	// Set channel to 0
+	glUniform1i(channelLoc,0);
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -415,7 +407,6 @@ GLFWwindow *init_gl_and_get_window()
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// Stops textures rendering upsidedown
 	stbi_set_flip_vertically_on_load(true);
@@ -463,31 +454,9 @@ void bind_texture(GLuint *texture, char *location)
 	stbi_image_free(data);
 }
 
-void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
+void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
-	int total_size =  4 * sizeof(float);
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices_length, vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
-
-	// Position 2D
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
-	glEnableVertexAttribArray(0);
-
-	// Texture coord
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
-
-void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
-{
+	int total_size =  3 * sizeof(GLfloat); // + sizeof(GLuint);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -497,23 +466,35 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
 
 	// Position 3D
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, total_size, (void *)0);
 	glEnableVertexAttribArray(0);
 
-	// Colour
-	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
+void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
+{
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices_length, vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
+
+	// Position 2D
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+	glEnableVertexAttribArray(0);
+
+	// Texture coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(2 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-	// make sure the viewport matches the new window dimensions; note that width and
-	// height will be significantly larger than specified on retina displays.
-	glViewport(0, 0, width, height);
-}
 void terminate_context()
 {
 	// Do i need to clean up textures, window as well (I assume so will look into this later)
@@ -535,7 +516,7 @@ void terminate_context()
 }
 
 #ifdef OGL4
-double get_mean_pixel_value() {
+double get_mean_pixel_value(GLuint texture) {
 	
 
 	
@@ -546,8 +527,8 @@ double get_mean_pixel_value() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
 	// std::clock_t    start;
-
     // start = std::clock();
+
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
 	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
@@ -555,32 +536,18 @@ double get_mean_pixel_value() {
 
 	// Make sure all buffers have been loaded
 	glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-
-	// int mse;
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-	// glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
-	// glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), &mse);
-
-
-	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 	
 	int mse = *(context->ssbo_map);
-	// glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	// int mse = 0;
 
 	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-	// std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
 	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
-double get_mean_pixel_value() {
+double get_mean_pixel_value(GLuint texture) {
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, context->diffTexture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Checking the size of the pixel
@@ -590,7 +557,6 @@ double get_mean_pixel_value() {
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT, &mipmapLevelHeight);
 	std::cout << mipmapLevelWidth << std::endl;
 	std::cout << mipmapLevelHeight << std::endl;
-	// glGetTexImage(GL_TEXTURE_2D, deepestLevel, GL_RGBA, GL_FLOAT, &pixel[0]);
 
 	// Times by 3 for RGB
 	GLfloat *pixels = new GLfloat[mipmapLevelWidth * mipmapLevelHeight * 3];
