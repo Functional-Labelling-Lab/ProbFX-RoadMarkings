@@ -72,7 +72,7 @@ struct opengl_context
 
 void init_context();
 GLFWwindow *init_gl_and_get_window();
-void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
+void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_texture(GLuint *texture, char *location);
 void get_path(const char *target, char *dest);

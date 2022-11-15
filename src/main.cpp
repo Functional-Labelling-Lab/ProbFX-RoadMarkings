@@ -266,12 +266,12 @@ void render_scene(struct scene *scene)
 	float planeSize = 100.0f;
 
 	// This is done here because it depends on the scene
-	GLfloat ground_vertices[] = {
+	sceneVertex ground_vertices[] = {
 			// positions               //Channel    
-			planeSize, 0.0f, planeSize, 1.0f,   // top right
-			planeSize, 0.0f, -planeSize, 1.0f, 									// bottom right
-			-planeSize, 0.0f, -planeSize, 1.0f,																				// bottom left
-			-planeSize, 0.0f, planeSize, 1.0f								// top left
+			create_vertex(planeSize, 0.0f, planeSize, 1.0f),   // top right
+			create_vertex(planeSize, 0.0f, -planeSize, 1.0f), 									// bottom right
+			create_vertex(-planeSize, 0.0f, -planeSize, 1.0f),																				// bottom left
+			create_vertex(-planeSize, 0.0f, planeSize, 1.0f)								// top left
 	};
 
 
@@ -282,12 +282,12 @@ void render_scene(struct scene *scene)
 	};
 
 	float roadWidth = 0.15;
-	GLfloat road_vertices[] = {
+	sceneVertex road_vertices[] = {
 			// positions                        					//Channel
-			roadWidth, 0.0f, planeSize, 0.0f,  // top right
-			roadWidth, 0.0f, -planeSize, 0.0f,											 // bottom right
-			-roadWidth, 0.0f, -planeSize, 0.0f,								 // bottom left
-			-roadWidth, 0.0f, planeSize, 0.0f // top left
+			create_vertex(roadWidth, 0.0f, planeSize, 0.0f),  // top right
+			create_vertex(roadWidth, 0.0f, -planeSize, 0.0f),											 // bottom right
+			create_vertex(-roadWidth, 0.0f, -planeSize, 0.0f),								 // bottom left
+			create_vertex(-roadWidth, 0.0f, planeSize, 0.0f) // top left
 	};
 
 	GLuint road_indices[] = {
@@ -424,6 +424,28 @@ void bind_texture(GLuint *texture, char *location)
 	stbi_image_free(data);
 }
 
+void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
+{
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, vertices_length, vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
+
+	// Position 3D
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+	glEnableVertexAttribArray(0);
+
+	// Channel
+	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+}
+
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
 	int total_size =  4 * sizeof(float);
@@ -441,28 +463,6 @@ void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, 
 
 	// Texture coord
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-}
-
-void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
-{
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices_length, vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
-
-	// Position 3D
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
-	glEnableVertexAttribArray(0);
-
-	// Channel
-	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
