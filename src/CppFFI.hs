@@ -27,8 +27,7 @@ instance Storable Camera where
     sizeOf    = cSizeOf
 
 data Scene = Scene
-    { roadWidth :: Double
-    , camera :: Camera
+    { camera :: Camera
     } deriving (Generic, CStorable, Show)
 
 instance Storable Scene where

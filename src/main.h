@@ -25,7 +25,6 @@ struct scene
 		double yaw;
 		double roll;
 	};
-	double roadWidth;
 	camera camera;
 };
 }

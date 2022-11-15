@@ -42,7 +42,6 @@ opengl_context* context = NULL;
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth)
 {
 	struct scene scene;
-	scene.roadWidth = roadWidth;
 	scene.camera.x = x;
 	scene.camera.y = y;
 	scene.camera.z = z;
@@ -62,11 +61,11 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
-		// // Renders into diffFBO where the texture is in diffTexture
-		// find_texture_difference();
+		// Renders into diffFBO where the texture is in diffTexture
+		find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
-		render_to_screen(context->sceneTexture);
+		render_to_screen(context->diffTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -142,7 +141,6 @@ void init_context()
 	glGenTextures(1, &context->sceneTexture);
 	glGenFramebuffers(1, &context->diffFBO);
 	glGenTextures(1, &context->diffTexture);
-	// glCreateTextures(GL_TEXTURE_2D, 1, &context->diffTexture);
 
 	// Stage one buffer (Scene)
 	bind_frame_buffer(context->sceneFBO, context->sceneTexture);
@@ -204,9 +202,7 @@ GLuint load_texture(const char *str)
 
 void render_to_screen(GLuint texture)
 {	
-	if (!context) {	
-		init_context();	
-	}	
+
 	// Switch to screen output buffer	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
@@ -226,9 +222,6 @@ void render_to_screen(GLuint texture)
 
 void find_texture_difference(GLuint texture1,GLuint texture2)
 {
-	if (!context) {
-		init_context();
-	}
 	// Switch to difference test_bed buffer and clear it
 	glBindFramebuffer(GL_FRAMEBUFFER, context->diffFBO);
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -256,19 +249,11 @@ void find_texture_difference(GLuint texture1,GLuint texture2)
 
 void set_target_img(const char *str)
 {
-	if (!context) {
-		init_context();
-	}
 	context->targetTexture = load_texture(str);
 }
 
 void render_scene(struct scene *scene)
 {
-	if (!context) {
-		init_context();
-	}
-	// std::cout << "Rendering scene" << std::endl;
-	// std::cout << scene->roadWidth << std::endl;
 	float planeSize = 100.0f;
 	float scaleDown = 2;
 
@@ -289,10 +274,10 @@ void render_scene(struct scene *scene)
 	float roadWidth = 0.3;
 	float road_vertices[] = {
 			// positions                        // colors         // texture coords
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f,  // top right
-			static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,											 // bottom right
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, -planeSize, 0.0f,								 // bottom left
-			-static_cast<float>(scene->roadWidth) / 2, 0.0f, planeSize, 0.0f // top left
+			static_cast<float>(0.5) / 2, 0.0f, planeSize, 0.0f,  // top right
+			static_cast<float>(0.5) / 2, 0.0f, -planeSize, 0.0f,											 // bottom right
+			-static_cast<float>(0.5) / 2, 0.0f, -planeSize, 0.0f,								 // bottom left
+			-static_cast<float>(0.5) / 2, 0.0f, planeSize, 0.0f // top left
 	};
 
 	GLuint road_indices[] = {
