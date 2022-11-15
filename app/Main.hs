@@ -89,8 +89,8 @@ trainModel = do
         liftS $ print $ concatMap (get #roadWidth) traceMHs
 
 
-main :: IO ()
-main = trainModel
+-- main :: IO ()
+-- main = trainModel
 
--- main :: IO Int32
--- main = testBedExample
+main :: IO Int32
+main = testBedExample

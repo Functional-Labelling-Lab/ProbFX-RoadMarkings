@@ -38,7 +38,6 @@ const GLuint SCR_HEIGHT = 1000;
 
 opengl_context* context = NULL;
 
-
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth)
 {
 	struct scene scene;
@@ -62,10 +61,10 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		render_scene(&scene);
 
 		// Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference(context->sceneTexture,context->targetTexture);
+		// find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
-		render_to_screen(context->diffTexture);
+		render_to_screen(context->sceneTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -252,32 +251,43 @@ void set_target_img(const char *str)
 	context->targetTexture = load_texture(str);
 }
 
+
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z, GLfloat channel) {
+	sceneVertex vertex; 
+	vertex.x = x; 
+	vertex.y = y;
+	vertex.z = z;
+	vertex.channel = channel; 
+	return vertex;
+}
+
 void render_scene(struct scene *scene)
 {
 	float planeSize = 100.0f;
-	float scaleDown = 2;
 
 	// This is done here because it depends on the scene
-	float ground_vertices[] = {
-			// positions                   // colors          // texture coords
+	GLfloat ground_vertices[] = {
+			// positions               //Channel    
 			planeSize, 0.0f, planeSize, 1.0f,   // top right
 			planeSize, 0.0f, -planeSize, 1.0f, 									// bottom right
 			-planeSize, 0.0f, -planeSize, 1.0f,																				// bottom left
 			-planeSize, 0.0f, planeSize, 1.0f								// top left
 	};
 
+
+
 	GLuint ground_indices[] = {
 			0, 1, 3, // first triangle
 			1, 2, 3	 // second triangle
 	};
 
-	float roadWidth = 0.3;
-	float road_vertices[] = {
-			// positions                        // colors         // texture coords
-			static_cast<float>(0.5) / 2, 0.0f, planeSize, 0.0f,  // top right
-			static_cast<float>(0.5) / 2, 0.0f, -planeSize, 0.0f,											 // bottom right
-			-static_cast<float>(0.5) / 2, 0.0f, -planeSize, 0.0f,								 // bottom left
-			-static_cast<float>(0.5) / 2, 0.0f, planeSize, 0.0f // top left
+	float roadWidth = 0.15;
+	GLfloat road_vertices[] = {
+			// positions                        					//Channel
+			roadWidth, 0.0f, planeSize, 0.0f,  // top right
+			roadWidth, 0.0f, -planeSize, 0.0f,											 // bottom right
+			-roadWidth, 0.0f, -planeSize, 0.0f,								 // bottom left
+			-roadWidth, 0.0f, planeSize, 0.0f // top left
 	};
 
 	GLuint road_indices[] = {
@@ -367,7 +377,6 @@ GLFWwindow *init_gl_and_get_window()
 	}
 
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// Stops textures rendering upsidedown
 	stbi_set_flip_vertically_on_load(true);
@@ -452,7 +461,7 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
 	glEnableVertexAttribArray(0);
 
-	// Colour
+	// Channel
 	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
@@ -460,12 +469,6 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 	glBindVertexArray(0);
 }
 
-void framebuffer_size_callback(GLFWwindow *window, int width, int height)
-{
-	// make sure the viewport matches the new window dimensions; note that width and
-	// height will be significantly larger than specified on retina displays.
-	glViewport(0, 0, width, height);
-}
 void terminate_context()
 {
 	// Do i need to clean up textures, window as well (I assume so will look into this later)

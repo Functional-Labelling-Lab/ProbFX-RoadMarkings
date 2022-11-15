@@ -29,6 +29,14 @@ struct scene
 };
 }
 
+struct sceneVertex
+{
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
+	GLfloat channel;
+};
+
 struct opengl_context
 {
 	GLFWwindow *window;
@@ -63,7 +71,6 @@ struct opengl_context
 };
 
 void init_context();
-void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 GLFWwindow *init_gl_and_get_window();
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
