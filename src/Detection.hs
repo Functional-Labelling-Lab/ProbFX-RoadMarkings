@@ -21,9 +21,13 @@ import Foreign
 import Foreign.Marshal.Alloc
 import OpenSum (Member)
 import System.IO.Unsafe
+import Hough (compareLines)
 
 clamp :: (Double, Double) -> Double -> Double
 clamp (a, b) = min b . max a
+
+
+--- Probabilistic Model
 
 
 --- Training
