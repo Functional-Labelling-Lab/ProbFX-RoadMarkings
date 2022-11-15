@@ -96,6 +96,7 @@ void init_context()
 	// out shader
 	context->outShader = load_shader("/src/shaders/out_vert.glsl", "/src/shaders/out_frag.glsl");
 
+	//For drawing onto a box the fits the whole screen to show our texture
 	float diff_vertices[] = {
 			// positions   // texture coords
 			1.0f, 1.0f, 1.0f, 1.0f,		// top right
@@ -320,6 +321,7 @@ void render_scene(struct scene *scene)
 
 	// View Transformation -- Calculated by picking a position and a point to look at
 	cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
+	
 	cameraTarget = glm::vec3(-scene->camera.x, scene->camera.y + sin((M_PI / 2) * scene->camera.pitch), scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
 	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0, 1.0, 0.0));
 
@@ -336,11 +338,13 @@ void render_scene(struct scene *scene)
 	channelLoc = glGetUniformLocation(context->sceneShader, "channel");
 
 	// Render ground
+	// Set channel to 1
 	glUniform1i(channelLoc,1);
 	glBindVertexArray(VAOs[0]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	// Render road
+	// Set channel to 0
 	glUniform1i(channelLoc,0);
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -438,10 +442,6 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *ver
 	// Position 3D
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, total_size, (void *)0);
 	glEnableVertexAttribArray(0);
-
-	// // Channel
-	// glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, total_size, (void *)(3 * sizeof(GLfloat)));
-	// glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
