@@ -12,7 +12,7 @@ void render_scene(struct scene *scene);
 double get_mean_pixel_value(GLuint texture);
 void find_texture_difference(GLuint texture1,GLuint texture2);
 
-int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth);
+int test_bed(double x, double y, double z, double pitch, double yaw, double roll);
 
 struct scene
 {

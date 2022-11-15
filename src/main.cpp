@@ -38,7 +38,7 @@ const GLuint SCR_HEIGHT = 1000;
 
 opengl_context* context = NULL;
 
-int test_bed(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth)
+int test_bed(double x, double y, double z, double pitch, double yaw, double roll)
 {
 	struct scene scene;
 	scene.camera.x = x;
@@ -53,8 +53,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 	while (!glfwWindowShouldClose(context->window))
 	{
-
-
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
@@ -345,13 +343,16 @@ void render_scene(struct scene *scene)
 
 	// Model Tranformations -- None atm so commented out
 	model = glm::mat4(1.0f);
-	// model = glm::rotate(model, glm::radians(0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	// model = glm::rotate(model, glm::radians(90.0f * (float) scene->camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	// View Transformation -- Calculated by picking a position and a point to look at
 	cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
 	
-	cameraTarget = glm::vec3(-scene->camera.x, scene->camera.y + sin((M_PI / 2) * scene->camera.pitch), scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
-	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0, 1.0, 0.0));
+	cameraTarget = glm::vec3(
+		-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
+		scene->camera.y + sin((M_PI / 2) * scene->camera.pitch * cos((M_PI / 2) * scene->camera.yaw)),
+		scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
+	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(sin((M_PI / 2) * scene->camera.roll), cos((M_PI / 2) * scene->camera.roll), 0.0));
 
 	// Projection -- Sets perspective (FOV 45 degrees and in perspective projection)
 	projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
