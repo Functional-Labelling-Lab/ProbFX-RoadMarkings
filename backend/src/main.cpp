@@ -147,11 +147,14 @@ void init_context()
 	// Stage two buffer (image_diffrence)
 	bind_frame_buffer(context->diffFBO, context->diffTexture);
 
+
+	#ifdef OGL4
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	GLuint ssbo;
 	glGenBuffers(1, &ssbo);
 
 	context->ssbo = ssbo;
-
+	std::cout << "Compiling Loading" << std::endl;
 	// Load compute shader into memory	
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./backend/src/shaders/mse.computeshader", std::ios::in);
@@ -162,6 +165,7 @@ void init_context()
 		ComputeShaderStream.close();
 	}
 
+	std::cout << "Compiling CompShader" << std::endl;
 	// Compile the compute shader
 	char * prog = &ComputeShaderCode[0];
 	GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
@@ -171,6 +175,7 @@ void init_context()
     GLchar message[1024];
     glGetShaderInfoLog(mse_shader, 1024, &log_length, message);
 	// Link the compute shader
+	std::cout << "Linking compShader" << std::endl;
 	GLuint mse_program = glCreateProgram();
 	glAttachShader(mse_program, mse_shader);
 	glLinkProgram(mse_program);
@@ -192,6 +197,8 @@ void init_context()
 
 
 	context->computeShader = mse_program;
+	#else
+	#endif
 
 	// uncomment this call to draw in wireframe polygons.
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
