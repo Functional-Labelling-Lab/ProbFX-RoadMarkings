@@ -76,7 +76,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 		// break;
-
 	}
 	terminate_context();
 
@@ -201,7 +200,6 @@ GLuint load_texture(const char *str)
 
 void render_to_screen(GLuint texture)
 {	
-
 	// Switch to screen output buffer	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
@@ -252,12 +250,11 @@ void set_target_img(const char *str)
 }
 
 
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z, GLfloat channel) {
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
 	sceneVertex vertex; 
 	vertex.x = x; 
 	vertex.y = y;
 	vertex.z = z;
-	vertex.channel = channel; 
 	return vertex;
 }
 
@@ -267,11 +264,11 @@ void render_scene(struct scene *scene)
 
 	// This is done here because it depends on the scene
 	sceneVertex ground_vertices[] = {
-			// positions               //Channel    
-			create_vertex(planeSize, 0.0f, planeSize, 1.0f),   // top right
-			create_vertex(planeSize, 0.0f, -planeSize, 1.0f), 									// bottom right
-			create_vertex(-planeSize, 0.0f, -planeSize, 1.0f),																				// bottom left
-			create_vertex(-planeSize, 0.0f, planeSize, 1.0f)								// top left
+			// positions       
+			create_vertex(planeSize, 0.0f, planeSize),   // top right
+			create_vertex(planeSize, 0.0f, -planeSize),  // bottom right
+			create_vertex(-planeSize, 0.0f, -planeSize), // bottom left
+			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
 	};
 
 
@@ -283,11 +280,11 @@ void render_scene(struct scene *scene)
 
 	float roadWidth = 0.15;
 	sceneVertex road_vertices[] = {
-			// positions                        					//Channel
-			create_vertex(roadWidth, 0.0f, planeSize, 0.0f),  // top right
-			create_vertex(roadWidth, 0.0f, -planeSize, 0.0f),											 // bottom right
-			create_vertex(-roadWidth, 0.0f, -planeSize, 0.0f),								 // bottom left
-			create_vertex(-roadWidth, 0.0f, planeSize, 0.0f) // top left
+			// positions                        			
+			create_vertex(roadWidth, 0.0f, planeSize),   // top right
+			create_vertex(roadWidth, 0.0f, -planeSize),	 // bottom right
+			create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
+			create_vertex(-roadWidth, 0.0f, planeSize)   // top left
 	};
 
 	GLuint road_indices[] = {
@@ -304,7 +301,7 @@ void render_scene(struct scene *scene)
 
 	glm::mat4 model, view, projection;
 	glm::vec3 cameraPos, cameraTarget;
-	int modelLoc, viewLoc, projectionLoc;
+	int modelLoc, viewLoc, projectionLoc, channelLoc;
 
 	// Bind to framebuffer so images displayed there rather than screen
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
@@ -336,12 +333,15 @@ void render_scene(struct scene *scene)
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	projectionLoc = glGetUniformLocation(context->sceneShader, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+	channelLoc = glGetUniformLocation(context->sceneShader, "channel");
 
 	// Render ground
+	glUniform1i(channelLoc,1);
 	glBindVertexArray(VAOs[0]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	// Render road
+	glUniform1i(channelLoc,0);
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -426,6 +426,7 @@ void bind_texture(GLuint *texture, char *location)
 
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
+	int total_size =  3 * sizeof(GLfloat); // + sizeof(GLuint);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -435,12 +436,12 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *ver
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
 
 	// Position 3D
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, total_size, (void *)0);
 	glEnableVertexAttribArray(0);
 
-	// Channel
-	glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+	// // Channel
+	// glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, total_size, (void *)(3 * sizeof(GLfloat)));
+	// glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -448,7 +449,6 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *ver
 
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
-	int total_size =  4 * sizeof(float);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -458,11 +458,11 @@ void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
 
 	// Position 2D
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)0);
 	glEnableVertexAttribArray(0);
 
 	// Texture coord
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (void *)(2 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
