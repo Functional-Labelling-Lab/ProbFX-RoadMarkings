@@ -592,7 +592,8 @@ double get_mean_pixel_value() {
 			cumB += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 2] * 255);
 		}
 	}
-	std::cout << cumR + cumG + cumB << std::endl;	
+	std::cout << cumR + cumG + cumB << std::endl;
+	delete[] pixels;
 	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
 #endif
