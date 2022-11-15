@@ -192,10 +192,10 @@ void init_context()
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
 	// Allocate space for it (sizeof(positions) + sizeof(colors)).
-	glBufferData(GL_SHADER_STORAGE_BUFFER,                       // target
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
 				sizeof(int) * SCR_WIDTH * SCR_HEIGHT,    // total size
 				NULL,                                  // no data
-				GL_STATIC_READ); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+				GL_MAP_READ_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
 
 	std::cout << message << std::endl;
@@ -553,7 +553,6 @@ double get_mean_pixel_value() {
 	// Make sure all buffers have been loaded
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 
@@ -569,6 +568,7 @@ double get_mean_pixel_value() {
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	// int mse = 0;
 
+	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 	std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
 	return static_cast<double>(mse);
