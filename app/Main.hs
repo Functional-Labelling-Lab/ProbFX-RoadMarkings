@@ -64,7 +64,7 @@ errorFunction s = unsafePerformIO $ do
     poke scene s
 
     renderScene scene
-    -- findTextureDifference
+    findTextureDifference
     realToFrac <$> getMeanPixelValue
 
 
