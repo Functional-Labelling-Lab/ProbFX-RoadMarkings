@@ -28,3 +28,32 @@ The long-term goal is to build the pipeline described below...
 - Implement a basic model for road geometry
 - Improve basic equation to error function check routines
 - Implement our own metropolis hastings to improve/refine model parameters on a single image
+
+
+## Building The Project
+### Dependencies
+On Ubuntu ensure you have installed the following:
+```bash
+sudo apt-get install libx11-dev
+sudo apt-get install mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev
+sudo apt-get install libxinerama1 libxinerama-dev
+sudo apt-get install libxcursor-dev
+sudo apt-get install libxrandr-dev
+sudo apt-get install libxi-dev
+sudo apt-get install libxmu-dev
+sudo apt-get install libblas-dev
+sudo apt-get install libglfw3
+sudo apt-get install libglfw3-dev
+sudo apt install libglm-dev
+```
+
+And then, you'll need to run the following script to install glad:
+```bash
+sudo bash setup.sh
+```
+
+Finally, run the example with Cabal:
+```bash
+cabal update
+cabal run
+```

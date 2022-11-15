@@ -19,88 +19,78 @@ import Inference.MH ( mh )
 import Sampler ( sampleIO, liftS )
 
 import Data.List (partition)
-import Graphics.Image (toLists)
-import Graphics.Image.IO ( readImageExact', writeImageExact )
-import Graphics.Image.Types
-import Graphics.Image.Interface ( Image, dims, makeImage )
-import GHC.Real (Integral(toInteger))
+import Foreign
+import Foreign.C.String
+import CppFFI
+import Foreign (Storable(..), StablePtr(..))
+import Foreign
+import Foreign.Marshal.Alloc
+import Effects.Lift (Lift)
+import OpenSum (Member)
+import System.IO.Unsafe
 
---- Probabilistic Model
+clamp :: (Double, Double) -> Double -> Double
+clamp (a, b) = (min b) . max a
 
-data RoadSample = RoadSample 
-    { centerX :: Double 
-    , width :: Double
-    }
-
---- Image processing
-
-type ImageData = Image VS RGB Word8
-
-drawFnToImage :: (Int, Int) -> ((Float, Float) -> Float) -> Float -> ImageData
-drawFnToImage dim fn e = makeImage dim (\(y, x) -> PixelRGB (value x y) (value x y) (value x y) )
-  where
-    solve :: Float -> Word8
-    solve a = if abs a <= e then 255 else 0
-    value x y = solve (fn (fromIntegral x, fromIntegral y))
-
-loadImage :: String -> IO ImageData
-loadImage = readImageExact' PNG
-
-renderImage :: RoadSample -> (Int, Int) -> ImageData
-renderImage rs dim@(imWidth, imHeight) = drawFnToImage dim roadFn 0.0
-  where
-    roadFn (x, _) = if normalized x >= realToFrac (centerX rs) - halfRsWidth && normalized x <= realToFrac (centerX rs) + halfRsWidth then 0 else 1
-    normalized x = x / fromIntegral imWidth :: Float
-    halfRsWidth = realToFrac (width rs) / 2.0 :: Float
-
-errorFunction :: RoadSample -> ImageData -> Double
-errorFunction rs target = (avgDistFromBlack / fromIntegral (width + height)) + (avgDistFromWhite / fromIntegral (width + height))
-  where
-    im_dims@(width, height) = dims target
-    drawnImage = renderImage rs im_dims 
-    (maskedPixels, antiMaskedPixels) = partition mask zippedImages
-
-    avgDistFromBlack = sum (Prelude.map (\(_, PixelRGB r g b) -> sqrt (fromIntegral r ^ 2 + fromIntegral g ^ 2 + fromIntegral b ^ 2) ) maskedPixels)
-
-    avgDistFromWhite = sum (Prelude.map (\(_, PixelRGB r g b) -> sqrt ((fromIntegral r - 255) ^ 2 + (fromIntegral g - 255) ^ 2 + (fromIntegral b - 255) ^ 2) ) antiMaskedPixels)
-
-    zippedImages :: [(Pixel RGB Word8, Pixel RGB Word8)]
-    zippedImages = concat $ Prelude.zipWith zip (toLists drawnImage) (toLists target)
-
-    mask :: (Pixel RGB Word8, Pixel RGB Word8) -> Bool
-    mask (PixelRGB 255 255 255, _) = True
-    mask (_, _) = False
 
 --- Training
 
-initRoadSample :: (Observables env ["centerX", "width"] Double) => Model env es RoadSample
+initRoadSample :: (Observables env ["y", "roadWidth"] Double) => Model env es Scene
 initRoadSample = do
-    centerX <- uniform 0 1 #centerX
-    width <- uniform 0 1 #width
-    return $ RoadSample centerX width
+    -- x <- uniform (-0.5) 0.5 #x
+    -- 0.6, 0, 0.2, 0
+    y <- uniform 0.0 0.4 #y
+    -- z <- uniform (-0.01) 0.01 #z
+    -- pitch <- uniform (-0.3) 0.3 #pitch
+    -- yaw <- uniform (-0.01) 0.01 #yaw
+    -- roll <- uniform (-0.01) 0.01 #roll
+    roadWidth <- uniform 0.0 0.5 #roadWidth
 
-roadGenerationModel :: (Observables env ["centerX", "width", "error"] Double) => ImageData -> () -> Model env es ()
-roadGenerationModel image _ = do
+    return $ Scene { camera = Camera {x=0.2, y=y, pitch=(-0.1), z=0, yaw=0, roll=0} }
+
+roadGenerationModel :: (Observables env ["y", "roadWidth", "error"] Double) => () -> Model env es ()
+roadGenerationModel _ = do
     roadSample <- initRoadSample
-    error <- normal (errorFunction roadSample image) 300 #error
-    return ()   
+    error <- normal (errorFunction roadSample) 10 #error
+    return ()
 
 --- Main code
 
-main :: IO Int
-main = sampleIO $ do
-    image <- liftS $ loadImage "data/example2.png"
+--- Do not use this in non-thread-safe code, please 
 
-    liftS $ print $ errorFunction (RoadSample 1 1) image
+errorFunction :: Scene -> Double
+errorFunction s = unsafePerformIO $ do
+    scene <- malloc
+    poke scene s
 
-    let mh_env = (#centerX := []) <:> (#width := []) <:> (#error := repeat 0) <:> nil
-    traceMHs <- mh 50000 (roadGenerationModel image) ((), mh_env) ["centerX", "width"]
+    renderScene scene
+    findTextureDifference
+    realToFrac <$> getMeanPixelValue
+
+
+testBedExample :: IO Int32
+testBedExample = testBed 0.2 0.2 0 (-0.1) 0 0 0.3
+
+--- Run training loop
+trainModel :: IO ()
+trainModel = do
+    string <- newCString "/src/textures/rendered_road.jpg"
+    setTargetImg string
     
-    let traceMH = head traceMHs
-    let centerX = head $ get #centerX traceMH
-        width = head $ get #width traceMH
-    liftS $ print (centerX, width, length traceMHs)
+    sampleIO $ do
 
-    let exampleImage = renderImage (RoadSample centerX width) (100, 100)
-    liftS $ writeImageExact PNG [] "output2.png" exampleImage
-    return 0
+        let mh_env = (#y := []) <:> (#roadWidth := []) <:> (#error := repeat 0) <:> nil
+        traceMHs <- mh 5000 roadGenerationModel ((), mh_env) ["y", "roadWidth"]
+        
+        let ys = concatMap (get #y) traceMHs
+
+        liftS $ print ys
+
+        liftS $ print $ concatMap (get #roadWidth) traceMHs
+
+
+main :: IO ()
+main = trainModel
+
+-- main :: IO Int32
+-- main = testBedExample
