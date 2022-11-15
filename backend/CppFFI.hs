@@ -36,6 +36,6 @@ instance Storable Scene where
 
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
-foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
+foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: IO Double
 foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: IO ()

@@ -69,7 +69,7 @@ errorFunction s = unsafePerformIO $ do
 
 
 testBedExample :: IO Int32
-testBedExample = testBed 0.2 0.2 0 (-0.1) 0 0 0.3
+testBedExample = testBed 0.2 0.2 0 (-0.0) 0 0
 
 --- Run training loop
 trainModel :: IO ()
@@ -89,8 +89,8 @@ trainModel = do
         liftS $ print $ concatMap (get #roadWidth) traceMHs
 
 
-main :: IO ()
-main = trainModel
+-- main :: IO ()
+-- main = trainModel
 
--- main :: IO Int32
--- main = testBedExample
+main :: IO Int32
+main = testBedExample
