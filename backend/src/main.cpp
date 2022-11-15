@@ -54,6 +54,8 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	while (!glfwWindowShouldClose(context->window))
 	{
 
+		scene.camera.roll += 0.1;
+
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
@@ -68,8 +70,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
 
 		// This is just for local rending
-		glfwSwapBuffers(context->window);
-		glfwPollEvents();
 
 		// break;
 	}
@@ -185,8 +185,9 @@ void init_context()
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
 				sizeof(int) * SCR_WIDTH * SCR_HEIGHT,    // total size
 				NULL,                                  // no data
-				GL_MAP_READ_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
+	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT);
 
 	std::cout << message << std::endl;
 
@@ -522,16 +523,16 @@ double get_mean_pixel_value() {
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
-	std::clock_t    start;
+	// std::clock_t    start;
 
-    start = std::clock();
+    // start = std::clock();
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
 	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
 
 
 	// Make sure all buffers have been loaded
-	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 
 	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
@@ -544,14 +545,14 @@ double get_mean_pixel_value() {
 
 	// glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 	
-	int mse = *(int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT);
-	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	int mse = *(context->ssbo_map);
+	// glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 	// int mse = 0;
 
-	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-	std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
-	return static_cast<double>(mse);
+	// std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
+	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
 double get_mean_pixel_value() {
