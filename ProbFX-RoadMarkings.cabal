@@ -32,7 +32,7 @@ library
     build-depends:    base , c-storable-deriving, containers
     hs-source-dirs:   src
     default-language: Haskell2010
-    cxx-sources: src/bindings.cpp src/glad.c src/main.cpp src/shaders.cpp
+    cxx-sources: cpp-src/src/bindings.cpp cpp-src/src/glad.c cpp-src/src/main.cpp cpp-src/src/shaders.cpp
     cxx-options: -lstdc++fs -std=c++17
     extra-libraries:     stdc++, glfw, stdc++fs, X11
 
