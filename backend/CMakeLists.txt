@@ -55,7 +55,7 @@ if(NOT glm_POPULATED)
 endif()
 
 # C++ compiler flags
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS "-g -lstdc++fs -std=c++17")
 
 target_link_libraries(${PROJECT_NAME} GL dl glfw glad glm m stdc++fs)

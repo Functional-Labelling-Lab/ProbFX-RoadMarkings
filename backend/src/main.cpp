@@ -48,14 +48,18 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	scene.camera.yaw = yaw;
 	scene.camera.roll = roll;
 
+	std::cout << "hello" << std::endl;
+
 	// Seperate Load img function
-	set_target_img("backend/src/textures/rendered_road.jpg");
+	set_target_img("/backend/src/textures/rendered_road.jpg");
+
+	std::cout << "world" << std::endl;
 
 	while (!glfwWindowShouldClose(context->window))
 	{
 		std::clock_t    start;
 
-		start = std::clock();
+		// start = std::clock();
 
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
@@ -68,12 +72,12 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
+		// std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
 
 		// This is just for local rending
 		glfwSwapBuffers(context->window);
 		glfwPollEvents();
-		std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+		// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
 		// break;
 	}
@@ -84,18 +88,20 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 void init_context()
 {
+
+	std::cout << "hello4" << std::endl;
 	context = new opengl_context;
-
+	std::cout << "hello5" << std::endl;
 	context->window = init_gl_and_get_window();
-
+	std::cout << "hello6" << std::endl;
 	// Load all shaders
 	// scene shader
-	context->sceneShader = load_shader("backend/src/shaders/scene_vert.glsl", "backend/src/shaders/scene_frag.glsl");
+	context->sceneShader = load_shader("/backend/src/shaders/scene_vert.glsl", "/backend/src/shaders/scene_frag.glsl");
 	// diff shader
-	context->diffShader = load_shader("backend/src/shaders/diff_vert.glsl", "backend/src/shaders/diff_frag.glsl");
+	context->diffShader = load_shader("/backend/src/shaders/diff_vert.glsl", "/backend/src/shaders/diff_frag.glsl");
 	// out shader
-	context->outShader = load_shader("backend/src/shaders/out_vert.glsl", "backend/src/shaders/out_frag.glsl");
-
+	context->outShader = load_shader("/backend/src/shaders/out_vert.glsl", "/backend/src/shaders/out_frag.glsl");
+	std::cout << "hello7" << std::endl;
 	//For drawing onto a box the fits the whole screen to show our texture
 	float diff_vertices[] = {
 			// positions   // texture coords
@@ -272,8 +278,6 @@ void render_scene(struct scene *scene)
 			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
 	};
 
-
-
 	GLuint ground_indices[] = {
 			0, 1, 3, // first triangle
 			1, 2, 3	 // second triangle
@@ -364,6 +368,7 @@ void get_path(const char *target, char *dest)
 
 GLFWwindow *init_gl_and_get_window()
 {
+	std::cout << "world1" << std::endl;
 	// glfw: initialize and configure
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -371,7 +376,7 @@ GLFWwindow *init_gl_and_get_window()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);  
-
+	std::cout << "world2" << std::endl;
 	// glfw window creation
 	GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", NULL, NULL);
 	if (window == NULL)
@@ -380,10 +385,16 @@ GLFWwindow *init_gl_and_get_window()
 		glfwTerminate();
 	}
 
+	std::cout << "world3" << std::endl;
+
 	glfwMakeContextCurrent(window);
+
+	std::cout << "world4" << std::endl;
 
 	// Stops textures rendering upsidedown
 	stbi_set_flip_vertically_on_load(true);
+
+	std::cout << "world5" << std::endl;
 
 	// glad: load all OpenGL function pointers
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -391,13 +402,23 @@ GLFWwindow *init_gl_and_get_window()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
 
+	std::cout << "world6" << std::endl;
+
 	int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+
+	std::cout << "world7" << std::endl;
+
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
+		std::cout << "world8" << std::endl;
 		glEnable(GL_DEBUG_OUTPUT);
+		std::cout << "world9" << std::endl;
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
-		glDebugMessageCallback(glDebugOutput, nullptr);
-		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		std::cout << "world10" << std::endl;
+		// glDebugMessageCallback(glDebugOutput, nullptr);
+		std::cout << "world11" << std::endl;
+		// glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		std::cout << "world12" << std::endl;
 	} else {
 		std::cout << "We don't have debugging" << std::endl; 
 	}

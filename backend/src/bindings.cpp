@@ -1,5 +1,6 @@
 #include "bindings.h"
 #include "main.h"
+#include <iostream>
 
 extern opengl_context* context;
 
@@ -18,7 +19,9 @@ void set_target_img_c(const char *str) {
 	set_target_img(str);
 } 
 int test_bed_c(double x, double y, double z, double pitch, double yaw, double roll, double roadWidth) {
+	std::cout << "hello2" << std::endl;
 	check_context();
+	std::cout << "hello3" << std::endl;
 	return test_bed(x,y,z,pitch,yaw,roll,roadWidth);
 }
 double get_mean_pixel_value_c() {
@@ -31,5 +34,6 @@ void find_texture_difference_c() {
 }
 
 int main() {
-	test_bed_c(0.6, -0, 0.5, 0,  0, 0, 0);
+	std::cout << "hello" << std::endl;
+	test_bed_c(0.2, 0.2, 0, 0,  0, 0, 0);
 }
