@@ -28,4 +28,8 @@ double get_mean_pixel_value_c() {
 void find_texture_difference_c() {
 	check_context();
 	find_texture_difference(context->sceneTexture,context->targetTexture);
-} 
+}
+
+int main() {
+	test_bed_c(0.6, -0, 0.5, 0,  0, 0, 0);
+}

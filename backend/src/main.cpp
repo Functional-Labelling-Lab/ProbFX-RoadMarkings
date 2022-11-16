@@ -49,7 +49,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	scene.camera.roll = roll;
 
 	// Seperate Load img function
-	set_target_img("/src/textures/rendered_road.jpg");
+	set_target_img("backend/src/textures/rendered_road.jpg");
 
 	while (!glfwWindowShouldClose(context->window))
 	{
@@ -90,11 +90,11 @@ void init_context()
 
 	// Load all shaders
 	// scene shader
-	context->sceneShader = load_shader("/src/shaders/scene_vert.glsl", "/src/shaders/scene_frag.glsl");
+	context->sceneShader = load_shader("backend/src/shaders/scene_vert.glsl", "backend/src/shaders/scene_frag.glsl");
 	// diff shader
-	context->diffShader = load_shader("/src/shaders/diff_vert.glsl", "/src/shaders/diff_frag.glsl");
+	context->diffShader = load_shader("backend/src/shaders/diff_vert.glsl", "backend/src/shaders/diff_frag.glsl");
 	// out shader
-	context->outShader = load_shader("/src/shaders/out_vert.glsl", "/src/shaders/out_frag.glsl");
+	context->outShader = load_shader("backend/src/shaders/out_vert.glsl", "backend/src/shaders/out_frag.glsl");
 
 	//For drawing onto a box the fits the whole screen to show our texture
 	float diff_vertices[] = {
@@ -154,7 +154,7 @@ void init_context()
 
 	// Load compute shader into memory	
 	std::string ComputeShaderCode;
-	std::ifstream ComputeShaderStream("./src/shaders/mse.computeshader", std::ios::in);
+	std::ifstream ComputeShaderStream("./backend/src/shaders/mse.computeshader", std::ios::in);
 	if(ComputeShaderStream.is_open()){
 		std::stringstream sstr;
 		sstr << ComputeShaderStream.rdbuf();
