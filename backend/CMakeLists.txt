@@ -54,6 +54,17 @@ if(NOT glm_POPULATED)
     add_subdirectory(${glm_SOURCE_DIR} ${glm_BINARY_DIR})
 endif()
 
+FetchContent_Declare(
+	stb_image
+	GIT_REPOSITORY https://github.com/jschmidt42/stb-cmake.git
+)
+FetchContent_GetProperties(stb_image)
+if(NOT stb_image_POPULATED)
+  FetchContent_Populate(stb_image)
+endif()
+
+include_directories(${stb_image_SOURCE_DIR})
+
 # C++ compiler flags
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17 -fPIC")

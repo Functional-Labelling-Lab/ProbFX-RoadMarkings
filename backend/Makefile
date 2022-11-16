@@ -1,19 +1,22 @@
 .PHONY: configure clean build
 
+build_dir = ../dist-newstyle/backend-build
+lib_dir = ../dist-newstyle/backend-libs
+
 all: configure build
 
 configure:
-	mkdir -p build
-	cmake -S . -B build
+	mkdir -p $(build_dir)
+	cmake -S . -B $(build_dir)
 
 build:
-	make -C build
-	rm -rf libs && mkdir libs
+	make -C $(build_dir)
+	rm -rf $(lib_dir) && mkdir $(lib_dir)
 	
 	# copy library files over - TODO: merge with AR
-	cp build/libRoadMarkingsBackend.a libs/libRoadMarkingsBackend.a
-	cp build/_deps/glfw-build/src/libglfw3.a libs/libglfw3.a
-	cp build/_deps/glad-build/libglad.a libs/libglad.a
+	cp $(build_dir)/libRoadMarkingsBackend.a        $(lib_dir)/libRoadMarkingsBackend.a
+	cp $(build_dir)/_deps/glfw-build/src/libglfw3.a $(lib_dir)/libglfw3.a
+	cp $(build_dir)/_deps/glad-build/libglad.a      $(lib_dir)/libglad.a
 clean:
-	rm -rf build
-	rm -rf libs
+	rm -rf $(build_dir)
+	rm -rf $(lib_dir)
