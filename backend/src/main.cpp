@@ -66,8 +66,6 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		// uncomment if you wanna be spammed in the terminal
 		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
 
-		// This is just for local rending
-
 		// break;
 	}
 	terminate_context();
@@ -239,7 +237,7 @@ void render_to_screen(GLuint texture)
 	// Draw it to whole screen	
 	glBindVertexArray(context->outVAO);	
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-	// glfwSwapBuffers(context->window);
+	glfwSwapBuffers(context->window);
 	glfwPollEvents();
 }
 
