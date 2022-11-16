@@ -29,7 +29,3 @@ void find_texture_difference_c() {
 	check_context();
 	find_texture_difference(context->sceneTexture,context->targetTexture);
 }
-
-int main() {
-	test_bed_c(0.2, 0.2, 0, 0,  0, 0, 0);
-}

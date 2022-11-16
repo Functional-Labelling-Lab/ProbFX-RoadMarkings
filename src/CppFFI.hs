@@ -1,7 +1,5 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass, ForeignFunctionInterface #-}
 
-
-
 module CppFFI (Scene(..), Camera(..), renderScene, setTargetImg, testBed, getMeanPixelValue, findTextureDifference) where
 
 import GHC.Generics (Generic(..))

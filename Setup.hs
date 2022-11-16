@@ -1,68 +1,61 @@
 module Main (main) where
 
 import Control.Monad
-    ( unless
-    , when
-    )
+  ( unless,
+    when,
+  )
 import Data.Maybe
-    ( fromJust
-    , fromMaybe
-    )
-import qualified Distribution.PackageDescription as PD
+  ( fromJust,
+    fromMaybe,
+  )
+import Distribution.PackageDescription
 import Distribution.Simple
-    ( Args
-    , UserHooks
-    , buildHook
-    , confHook
-    , defaultMainWithHooks
-    , postClean
-    , postConf
-    , preConf
-    , simpleUserHooks
-    )
 import Distribution.Simple.LocalBuildInfo
-    ( LocalBuildInfo
-    , configFlags
-    , localPkgDescr
-    )
 import Distribution.Simple.Setup
-    ( BuildFlags
-    , CleanFlags
-    , ConfigFlags
-    , buildVerbosity
-    , cleanVerbosity
-    , configConfigurationsFlags
-    , configVerbosity
-    , fromFlag
-    )
-import Distribution.Simple.Utils (rawSystemExit)
+import System.Process
 import System.Directory
-    ( doesDirectoryExist
-    , getCurrentDirectory
-    , removeDirectoryRecursive
-    )
 
 main :: IO ()
-main = defaultMainWithHooks simpleUserHooks {
-           confHook = roadMarkingsConfHook
-       }
+main =
+  defaultMainWithHooks
+    simpleUserHooks
+      { preConf = buildBackend,
+        confHook = addExtraLibs,
+        postClean = cmakeClean
+      }
 
-roadMarkingsConfHook :: (PD.GenericPackageDescription, PD.HookedBuildInfo) ->
-                  ConfigFlags ->
-                  IO LocalBuildInfo
-roadMarkingsConfHook (description, buildInfo) flags = do
-    localBuildInfo <- confHook simpleUserHooks (description, buildInfo) flags
-    let packageDescription = localPkgDescr localBuildInfo
-        library = fromJust $ PD.library packageDescription
-        libraryBuildInfo = PD.libBuildInfo library
-    dir <- getCurrentDirectory
-    return localBuildInfo {
-        localPkgDescr = packageDescription {
-            PD.library = Just $ library {
-                PD.libBuildInfo = libraryBuildInfo {
-                    PD.includeDirs = (dir ++ "/backend/build"):PD.includeDirs libraryBuildInfo,
-                    PD.extraLibDirs = (dir ++ "/backend/build"):PD.extraLibDirs libraryBuildInfo
-                }
+buildBackend :: Args -> ConfigFlags -> IO HookedBuildInfo
+buildBackend _ _ = do
+  readProcess "make" ["--directory=backend"] "" >>= putStrLn
+  return emptyHookedBuildInfo
+
+{- See https://github.com/haskell/cabal/issues/6112
+`cabal clean/new-clean/v2-clean does not consider the extra tmp files, and 
+hence no hooks are run, this is a bug with cabal. -}
+cmakeClean :: Args -> CleanFlags -> PackageDescription -> () -> IO ()
+cmakeClean _ _ _ _ =
+    readProcess "make" ["clean", "--directory=backend"] "" >>= putStrLn
+
+addExtraLibs ::
+  (GenericPackageDescription, HookedBuildInfo) ->
+  ConfigFlags ->
+  IO LocalBuildInfo
+addExtraLibs (description, buildInfo) flags = do
+  localBuildInfo <- confHook simpleUserHooks (description, buildInfo) flags
+  let packageDescription = localPkgDescr localBuildInfo
+      lib = fromJust $ library packageDescription
+      libraryBuildInfo   = libBuildInfo lib
+  dir <- getCurrentDirectory
+  return
+    localBuildInfo
+      { localPkgDescr =
+          packageDescription
+            { library =
+                Just $ lib
+                    { libBuildInfo =
+                        libraryBuildInfo
+                          { extraLibDirs = (dir ++ "/backend/libs") : extraLibDirs libraryBuildInfo
+                          }
+                    }
             }
-        }
-    }
+      }
