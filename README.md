@@ -14,13 +14,15 @@ The long-term goal is to build the pipeline described below...
 ## File Structure
 ```bash
 ├── CHANGELOG.md
-├── LICENSE
-├── ProbFX-Examples.cabal # Cabal dependencies and setup
-├── README.md             # This readme
-├── app
-│   ├── Image.hs          # Image functions (generating images from equations parameterised by samples from model)
-│   └── Main.hs           # Main function to interact with images
-└── cabal.project
+├── README.md     # This readme
+|
+├── ProbFX-RoadMarkings.cabal  # Cabal configuration
+├── Setup.hs                   # Hooks for running C++ side build
+├── cabal.project              # ProbFX dependency
+|
+├── backend ── ... # The C++ side of the project
+├── app ────── ... # The main 
+└── src ────── ... # The Haskell side of the project (contains bindings, logic)
 ```
 
 ## Repo Goals (Short Term)
@@ -31,29 +33,15 @@ The long-term goal is to build the pipeline described below...
 
 
 ## Building The Project
-### Dependencies
+### System Dependencies
 On Ubuntu ensure you have installed the following:
 ```bash
-sudo apt-get install libx11-dev
-sudo apt-get install mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev
-sudo apt-get install libxinerama1 libxinerama-dev
-sudo apt-get install libxcursor-dev
-sudo apt-get install libxrandr-dev
-sudo apt-get install libxi-dev
-sudo apt-get install libxmu-dev
-sudo apt-get install libblas-dev
-sudo apt-get install libglfw3
-sudo apt-get install libglfw3-dev
-sudo apt install libglm-dev
+sudo apt-get install libx11-dev mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev libxinerama1 libxinerama-dev libxcursor-dev libxrandr-dev libxi-dev libxmu-dev libblas-dev
 ```
 
-And then, you'll need to run the following script to install glad:
+### Build & Clean
 ```bash
-sudo bash setup.sh
-```
-
-Finally, run the example with Cabal:
-```bash
-cabal update
+cabal build
 cabal run
+cabal clean
 ```

@@ -1,50 +1,41 @@
 cabal-version:      2.4
 name:               ProbFX-RoadMarkings
-version:            0.1.0.0
+version:            0.1.2.0
 
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
+synopsis: Road Lane detection using ProbFX
+description:
+    Using ProbFX for a probabilistic model and OpenGL for rendering this project
+    aims to automate the labelling of basic road markings on dashcam images.
 
 -- A URL where users can report bugs.
--- bug-reports:
+bug-reports: https://github.com/Functional-Labelling-Lab/ProbFX-RoadMarkings/issues
 
--- The license under which the package is released.
 -- license:
-author:             God Emperor
+author:             Functional Labelling Lab
 maintainer:         bcieslar2001@gmail.com
 
--- A copyright notice.
--- copyright:
--- category:
-extra-source-files: CHANGELOG.md
+build-type: Custom 
+
+custom-setup
+  setup-depends: base, Cabal, process, directory
+
+extra-source-files:
+    backend/src
 
 library
+    hs-source-dirs:   backend
     exposed-modules:  CppFFI
+    build-depends:    base, c-storable-deriving, containers
 
-    -- Modules included in this library but not exported.
-    -- other-modules:
+    -- Order of libraries is important, reordering will cause linking failures
+    extra-libraries: 
+        RoadMarkingsBackend, glad, glfw3, GL, dl, m, stdc++fs, pthread, stdc++
 
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    base , c-storable-deriving, containers
-    hs-source-dirs:   src
-    default-language: Haskell2010
-    cxx-sources: src/bindings.cpp src/glad.c src/main.cpp src/shaders.cpp
-    cxx-options: -lstdc++fs -std=c++17
-    extra-libraries:     stdc++, glfw, stdc++fs, X11
 
 executable ProbFX-RoadMarkings
     buildable:        True
-    main-is:          Main.hs
+    main-is:          Detection.hs
+    build-depends:    base, prob-fx, ProbFX-RoadMarkings
 
-    -- Modules included in this executable, other than Main.
-    -- other-modules:
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    prob-fx, base, ProbFX-RoadMarkings
-    hs-source-dirs:   app
+    hs-source-dirs:   src
     default-language: Haskell2010
