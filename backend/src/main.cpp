@@ -60,7 +60,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
-		render_to_screen(context->sceneTexture);
+		render_to_screen(context->diffTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -185,7 +185,7 @@ void init_context()
 
 	// Allocate space for it (sizeof(positions) + sizeof(colors)).
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int),    // total size
+				sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
 				NULL,                                  // no data
 				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
@@ -522,7 +522,7 @@ void terminate_context()
 #ifdef OGL4
 double get_mean_pixel_value(GLuint texture) {	
 	
-
+	glFinish();
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
@@ -582,7 +582,7 @@ double get_mean_pixel_value() {
 			cumB += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 2] * 255);
 		}
 	}
-	std::cout << cumR + cumG + cumB << std::endl;
+	std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight)<< std::endl;
 	delete[] pixels;
 	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
