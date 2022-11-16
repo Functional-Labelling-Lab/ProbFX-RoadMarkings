@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <math.h>
 #include <iostream>
@@ -57,10 +58,10 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		render_scene(&scene);
 
 		// Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference(context->sceneTexture,context->targetTexture);
+		// find_texture_difference(context->sceneTexture,context->targetTexture);
 
 		// Render to screen for visual debugging
-		render_to_screen(context->diffTexture);
+		render_to_screen(context->sceneTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -274,13 +275,22 @@ void set_target_img(const char *str)
 	context->targetTexture = load_texture(str);
 }
 
-
 sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
 	sceneVertex vertex; 
 	vertex.x = x; 
 	vertex.y = y;
 	vertex.z = z;
 	return vertex;
+}
+
+
+//Converts vertex to coords we can use in the error function
+void get_vertex_in_clip_space(sceneVertex vertex, glm::mat4 projection, glm::mat4 view, glm::mat4 model) {
+	glm::vec4 vertexVector = glm::vec4(vertex.x,vertex.y,vertex.z,1.0);
+	glm::vec4 clipVertexVector = (projection * view * model) * vertexVector;
+	// clipVertexVector = clipVertexVector/clipVertexVector.w;
+
+	std::cout << glm::to_string(clipVertexVector) << "<-" << glm::to_string(vertexVector) << std::endl;
 }
 
 void render_scene(struct scene *scene)
@@ -296,8 +306,6 @@ void render_scene(struct scene *scene)
 			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
 	};
 
-
-
 	GLuint ground_indices[] = {
 			0, 1, 3, // first triangle
 			1, 2, 3	 // second triangle
@@ -311,6 +319,16 @@ void render_scene(struct scene *scene)
 			create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
 			create_vertex(-roadWidth, 0.0f, planeSize)   // top left
 	};
+
+	// sceneVertex road_vertices[] = {
+	// 		// positions                        			
+	// 		create_vertex(0.844975, -0.482843, -100.400406),   // top right
+	// 		create_vertex(0.844975, -0.482843, 100.000000),	 // bottom right
+	// 		create_vertex(0.120711, -0.482843, 100.000000), // bottom left
+	// 		create_vertex(0.120711, -0.482843, -100.400406)   // top left
+	// };
+
+
 
 	GLuint road_indices[] = {
 			0, 1, 3, // first trianglebind_diff_vertex_atts
@@ -326,7 +344,6 @@ void render_scene(struct scene *scene)
 
 	glm::mat4 model, view, projection;
 	glm::vec3 cameraPos, cameraTarget;
-	int modelLoc, viewLoc, projectionLoc, channelLoc;
 
 	// Bind to framebuffer so images displayed there rather than screen
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
@@ -350,19 +367,32 @@ void render_scene(struct scene *scene)
 		-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
 		scene->camera.y + sin((M_PI / 2) * scene->camera.pitch * cos((M_PI / 2) * scene->camera.yaw)),
 		scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
+
 	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(sin((M_PI / 2) * scene->camera.roll), cos((M_PI / 2) * scene->camera.roll), 0.0));
 
 	// Projection -- Sets perspective (FOV 45 degrees and in perspective projection)
 	projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
+	//Testing get positions of road vertexs
+	// std::cout << glm::to_string(projection) << std::endl;
+	// std::cout << glm::to_string(view) << std::endl;
+	// std::cout << glm::to_string(model) << std::endl;
+
+	get_vertex_in_clip_space(road_vertices[0],projection,view,model);
+	get_vertex_in_clip_space(road_vertices[1],projection,view,model);
+	get_vertex_in_clip_space(road_vertices[2],projection,view,model);
+	get_vertex_in_clip_space(road_vertices[3],projection,view,model);
+
 	// Links up Model, View and Projection matrix with shaders
-	modelLoc = glGetUniformLocation(context->sceneShader, "model");
+	GLuint modelLoc = glGetUniformLocation(context->sceneShader, "model");
+	GLuint viewLoc = glGetUniformLocation(context->sceneShader, "view");
+	GLuint projectionLoc = glGetUniformLocation(context->sceneShader, "projection");
+	GLuint channelLoc = glGetUniformLocation(context->sceneShader, "channel");
+
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	viewLoc = glGetUniformLocation(context->sceneShader, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-	projectionLoc = glGetUniformLocation(context->sceneShader, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-	channelLoc = glGetUniformLocation(context->sceneShader, "channel");
+	
 
 	// Render ground
 	// Set channel to 1
