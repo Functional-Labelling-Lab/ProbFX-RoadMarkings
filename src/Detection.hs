@@ -7,7 +7,17 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
+module Main (initRoadSample, main, trainModel) where
+
+import Debug.Trace ( trace )
 import Model ( Model, normal, uniform )
+import System.Environment ( getArgs )
+import Prog ( call )
+import Effects.ObsReader ( ObsReader(Ask) )
+import Model ( Model(Model), normal, uniform )
+import PrimDist ( PrimDist(BernoulliDist, UniformDist) )
+import Effects.Dist ( Dist(Dist) )
+import Data.Kind (Constraint)
 import Env ( Env, Observables, Assign((:=)), (<:>), nil, get )
 import Inference.MH ( mh, mhRaw )
 import Sampler ( sampleIO, liftS )
