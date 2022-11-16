@@ -37,7 +37,7 @@ jobs:
       run: |
         cabal update
         cabal build --only-dependencies --enable-tests --enable-benchmarks
-        sudo apt-get install libgl1-mesa-dev
+        sudo apt-get install xorg-dev libgl1-mesa-dev
     
     - name: Build
       run: cabal build --enable-tests --enable-benchmarks all
