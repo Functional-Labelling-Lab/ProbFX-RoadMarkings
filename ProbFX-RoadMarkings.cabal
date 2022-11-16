@@ -29,9 +29,7 @@ library
 
     -- Order of libraries is important, reordering will cause linking failures
     extra-libraries: 
-        RoadMarkingsBackend, glad, glfw3,
-        /usr/lib/x86_64-linux-gnu/librt.so,
-        GL, dl, m, stdc++fs, pthread, stdc++
+        RoadMarkingsBackend, glad, glfw3, GL, dl, m, stdc++fs, pthread, stdc++
 
 
 executable ProbFX-RoadMarkings
