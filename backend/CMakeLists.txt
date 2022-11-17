@@ -4,11 +4,13 @@ include(FetchContent)
 
 project(RoadMarkingsBackend)
 
-add_library(${PROJECT_NAME} STATIC src/main.cpp src/shaders.cpp src/bindings.cpp)
-# add_executable(${PROJECT_NAME} src/main.cpp src/shaders.cpp src/bindings.cpp)
+add_library(${PROJECT_NAME} STATIC src/main.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
+# add_executable(${PROJECT_NAME} src/main.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
 
 # OpenGL is required, including for glfw
 find_package( OpenGL REQUIRED )
+find_package( OpenCV REQUIRED )
+
 include_directories( ${OPENGL_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Get glfw
@@ -63,10 +65,10 @@ if(NOT stb_image_POPULATED)
   FetchContent_Populate(stb_image)
 endif()
 
-include_directories(${stb_image_SOURCE_DIR})
+include_directories(${stb_image_SOURCE_DIR} ${OpenCV_INCLUDE_DIRS})
 
 # C++ compiler flags
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17 -fPIC -DOGL4")
 
-target_link_libraries(${PROJECT_NAME} GL dl glfw glad glm m stdc++fs)
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} GL dl glfw glad glm m stdc++fs)

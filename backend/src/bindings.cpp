@@ -1,6 +1,6 @@
 #include "bindings.h"
 #include "main.h"
-
+#include "hough.h"
 extern opengl_context* context;
 
 void check_context(){
@@ -28,4 +28,10 @@ double get_mean_pixel_value_c() {
 void find_texture_difference_c() {
 	check_context();
 	find_texture_difference(context->sceneTexture,context->targetTexture);
+}
+
+// Hough transform bindings
+detected_lines_t *hough_lines_c(const char *str) {
+	check_context();
+	return detect_lines(str);
 }

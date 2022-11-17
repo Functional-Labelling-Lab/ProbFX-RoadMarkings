@@ -99,7 +99,10 @@ trainModel = do
 
 
 main :: IO ()
-main = trainModel
+-- main = trainModel
+main = do
+    let ls = getHoughLines "data/road.jpg"
+    print ls
 
 -- main :: IO Int32
 -- main = testBedExample

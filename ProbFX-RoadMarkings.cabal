@@ -29,7 +29,9 @@ library
 
     -- Order of libraries is important, reordering will cause linking failures
     extra-libraries: 
-        RoadMarkingsBackend, glad, glfw3, GL, dl, m, stdc++fs, pthread, stdc++
+        RoadMarkingsBackend, glad, glfw3, 
+        opencv_core, opencv_imgcodecs, opencv_highgui, opencv_imgproc
+        GL, dl, m, stdc++fs, pthread, stdc++
 
 
 executable ProbFX-RoadMarkings
