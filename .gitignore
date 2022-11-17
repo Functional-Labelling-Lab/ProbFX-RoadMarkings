@@ -1,3 +1,5 @@
 dist-newstyle
 .*
 dist
+backend/build/
+backend/lib/

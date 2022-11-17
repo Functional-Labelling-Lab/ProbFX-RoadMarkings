@@ -27,7 +27,7 @@ double get_mean_pixel_value_c() {
 }
 void find_texture_difference_c() {
 	check_context();
-	get_image_mask(context->sceneTexture,context->targetTexture,1);
+	get_image_mask(context->sceneTexture,context->targetTexture,0);
 }
 
 // Hough transform bindings

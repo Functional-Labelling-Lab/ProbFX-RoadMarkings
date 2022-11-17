@@ -3,15 +3,25 @@ out vec4 FragColor;
   
 in vec2 TexCoords;
 
+uniform int channel;
 uniform sampler2D mask;
-uniform sampler2D texture;
+uniform sampler2D myTexture;
 
 void main()
 { 
-
-	float r = abs(texture(texture, TexCoords).x - texture(mask, TexCoords).x);
-	float g = abs(texture(texture, TexCoords).y - texture(mask, TexCoords).y);
-	float b = abs(texture(texture, TexCoords).z - texture(mask, TexCoords).z);  
-	float a = abs(texture(texture, TexCoords).w - texture(mask, TexCoords).w);  
-	FragColor = vec4(r,g,b,1);
+	if (channel == 0) {
+		if (texture(mask, TexCoords).x == 1) {
+			FragColor = texture(myTexture, TexCoords);
+		} else {
+			FragColor = vec4(0,0,0,1);
+		}
+	} else if (channel == 1) {
+		if (texture(mask, TexCoords).y == 1) {
+			FragColor = texture(myTexture, TexCoords);
+		} else {
+			FragColor = vec4(0,0,0,1);
+		}
+	} else {
+		FragColor = vec4(0,0,0,1);
+	}
 }
