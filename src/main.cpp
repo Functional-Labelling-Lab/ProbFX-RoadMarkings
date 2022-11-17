@@ -25,19 +25,19 @@
 
 #define _USE_MATH_DEFINES
 
-void APIENTRY glDebugOutput(GLenum source, 
-                            GLenum type, 
-                            GLuint id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam);
+void APIENTRY glDebugOutput(GLenum source,
+														GLenum type,
+														GLuint id,
+														GLenum severity,
+														GLsizei length,
+														const char *message,
+														const void *userParam);
 
 // settings
 const GLuint SCR_WIDTH = 1000;
 const GLuint SCR_HEIGHT = 1000;
 
-opengl_context* context = NULL;
+opengl_context *context = NULL;
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll)
 {
@@ -76,11 +76,11 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 void init_context()
 {
-	#ifdef OGL4
+#ifdef OGL4
 	std::cout << "Using OpenGL 4" << std::endl;
-	#else
+#else
 	std::cout << "Using OpenGL 3" << std::endl;
-	#endif
+#endif
 
 	context = new opengl_context;
 
@@ -94,7 +94,7 @@ void init_context()
 	// out shader
 	context->outShader = load_shader("/src/shaders/out_vert.glsl", "/src/shaders/out_frag.glsl");
 
-	//For drawing onto a box the fits the whole screen to show our texture
+	// For drawing onto a box the fits the whole screen to show our texture
 	float diff_vertices[] = {
 			// positions   // texture coords
 			1.0f, 1.0f, 1.0f, 1.0f,		// top right
@@ -145,18 +145,18 @@ void init_context()
 	// Stage two buffer (image_diffrence)
 	bind_frame_buffer(context->diffFBO, context->diffTexture);
 
-
-	#ifdef OGL4
+#ifdef OGL4
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	GLuint ssbo;
 	glGenBuffers(1, &ssbo);
 
 	context->ssbo = ssbo;
 	std::cout << "Compiling Loading" << std::endl;
-	// Load compute shader into memory	
+	// Load compute shader into memory
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./src/shaders/mse.computeshader", std::ios::in);
-	if(ComputeShaderStream.is_open()){
+	if (ComputeShaderStream.is_open())
+	{
 		std::stringstream sstr;
 		sstr << ComputeShaderStream.rdbuf();
 		ComputeShaderCode = sstr.str();
@@ -165,13 +165,13 @@ void init_context()
 
 	std::cout << "Compiling CompShader" << std::endl;
 	// Compile the compute shader
-	char * prog = &ComputeShaderCode[0];
+	char *prog = &ComputeShaderCode[0];
 	GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
 	glShaderSource(mse_shader, 1, &prog, NULL);
 	glCompileShader(mse_shader);
 	GLsizei log_length = 0;
-    GLchar message[1024];
-    glGetShaderInfoLog(mse_shader, 1024, &log_length, message);
+	GLchar message[1024];
+	glGetShaderInfoLog(mse_shader, 1024, &log_length, message);
 	// Link the compute shader
 	std::cout << "Linking compShader" << std::endl;
 	GLuint mse_program = glCreateProgram();
@@ -184,19 +184,18 @@ void init_context()
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
 	// Allocate space for it (sizeof(positions) + sizeof(colors)).
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
-				NULL,                                  // no data
-				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER,																				// target
+									sizeof(int) * SCR_HEIGHT * SCR_WIDTH,														// total size
+									NULL,																														// no data
+									GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
 
-	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+	context->ssbo_map = (int *)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
 	std::cout << message << std::endl;
 
-
 	context->computeShader = mse_program;
-	#else
-	#endif
+#else
+#endif
 
 	// uncomment this call to draw in wireframe polygons.
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -225,25 +224,25 @@ GLuint load_texture(const char *str)
 }
 
 void render_to_screen(GLuint texture)
-{	
-	// Switch to screen output buffer	
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
-	glClear(GL_COLOR_BUFFER_BIT);	
-	// Links texture locations to shaders (I think)	
-	glUseProgram(context->outShader);	
-	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);	
-	// Load diff texture	
-	glActiveTexture(GL_TEXTURE0);	
-	glBindTexture(GL_TEXTURE_2D, texture);	
-	// Draw it to whole screen	
-	glBindVertexArray(context->outVAO);	
+{
+	// Switch to screen output buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	// Links texture locations to shaders (I think)
+	glUseProgram(context->outShader);
+	glUniform1i(glGetUniformLocation(context->outShader, "ourTexture"), 0);
+	// Load diff texture
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	// Draw it to whole screen
+	glBindVertexArray(context->outVAO);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glfwSwapBuffers(context->window);
 	glfwPollEvents();
 }
 
-void find_texture_difference(GLuint texture1,GLuint texture2)
+void find_texture_difference(GLuint texture1, GLuint texture2)
 {
 	// Switch to difference test_bed buffer and clear it
 	glBindFramebuffer(GL_FRAMEBUFFER, context->diffFBO);
@@ -275,33 +274,56 @@ void set_target_img(const char *str)
 	context->targetTexture = load_texture(str);
 }
 
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
-	sceneVertex vertex; 
-	vertex.x = x; 
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z)
+{
+	sceneVertex vertex;
+	vertex.x = x;
 	vertex.y = y;
 	vertex.z = z;
 	return vertex;
 }
 
-
-//Converts vertex to coords we can use in the error function
-void get_vertex_in_clip_space(sceneVertex vertex, glm::mat4 projection, glm::mat4 view, glm::mat4 model) {
-	glm::vec4 vertexVector = glm::vec4(vertex.x,vertex.y,vertex.z,1.0);
-	glm::vec4 clipVertexVector = (projection * view * model) * vertexVector;
+// Converts vertex to coords we can use in the error function
+sceneVertex get_vertex_in_clip_space(sceneVertex vertex, glm::mat4 projection, glm::mat4 view, glm::mat4 model)
+{
+	glm::vec4 vertexVector = glm::vec4(vertex.x, vertex.y, vertex.z, 1.0);
+	glm::vec4 clipVertexVector = projection * view * model * vertexVector;
 	// clipVertexVector = clipVertexVector/clipVertexVector.w;
 
-	std::cout << glm::to_string(clipVertexVector) << "<-" << glm::to_string(vertexVector) << std::endl;
+	std::cout << glm::to_string(clipVertexVector) << std::endl;
+	return create_vertex(clipVertexVector.x, clipVertexVector.y, clipVertexVector.z);
 }
 
 void render_scene(struct scene *scene)
 {
+
+	glm::mat4 model, view, projection;
+	glm::vec3 cameraPos, cameraTarget;
+
+	// Model Tranformations -- None atm so commented out
+	model = glm::mat4(1.0f);
+	// model = glm::rotate(model, glm::radians(90.0f * (float) scene->camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	// View Transformation -- Calculated by picking a position and a point to look at
+	cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
+
+	cameraTarget = glm::vec3(
+			-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
+			scene->camera.y + sin((M_PI / 2) * scene->camera.pitch * cos((M_PI / 2) * scene->camera.yaw)),
+			scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
+
+	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(sin((M_PI / 2) * scene->camera.roll), cos((M_PI / 2) * scene->camera.roll), 0.0));
+
+	// Projection -- Sets perspective (FOV 45 degrees and in perspective projection)
+	projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
 	float planeSize = 100.0f;
 
 	// This is done here because it depends on the scene
 	sceneVertex ground_vertices[] = {
-			// positions       
-			create_vertex(planeSize, 0.0f, planeSize),   // top right
-			create_vertex(planeSize, 0.0f, -planeSize),  // bottom right
+			// positions
+			create_vertex(planeSize, 0.0f, planeSize),	 // top right
+			create_vertex(planeSize, 0.0f, -planeSize),	 // bottom right
 			create_vertex(-planeSize, 0.0f, -planeSize), // bottom left
 			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
 	};
@@ -312,8 +334,17 @@ void render_scene(struct scene *scene)
 	};
 
 	float roadWidth = 0.15;
+
+	// sceneVertex road_vertices[] = {
+	// 		// positions
+	// 		create_vertex(0.5f, 0.5f, 0.0f),   // top right
+	// 		create_vertex(0.5f, -0.5f, 0.0f),	 // bottom right
+	// 		create_vertex(-0.5f, -0.5f, 0.0f), // bottom left
+	// 		create_vertex(-0.5f, 0.5f, 0.0f)   // top left
+	// };
+
 	sceneVertex road_vertices[] = {
-			// positions                        			
+			// positions
 			create_vertex(roadWidth, 0.0f, planeSize),   // top right
 			create_vertex(roadWidth, 0.0f, -planeSize),	 // bottom right
 			create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
@@ -321,14 +352,12 @@ void render_scene(struct scene *scene)
 	};
 
 	// sceneVertex road_vertices[] = {
-	// 		// positions                        			
-	// 		create_vertex(0.844975, -0.482843, -100.400406),   // top right
-	// 		create_vertex(0.844975, -0.482843, 100.000000),	 // bottom right
-	// 		create_vertex(0.120711, -0.482843, 100.000000), // bottom left
-	// 		create_vertex(0.120711, -0.482843, -100.400406)   // top left
+	// 		// positions
+	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, planeSize), projection, view, model),		// top right
+	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, -planeSize), projection, view, model),	// bottom right
+	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, -planeSize), projection, view, model), // bottom left
+	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, planeSize), projection, view, model)		// top left
 	// };
-
-
 
 	GLuint road_indices[] = {
 			0, 1, 3, // first trianglebind_diff_vertex_atts
@@ -342,9 +371,6 @@ void render_scene(struct scene *scene)
 	bind_scene_vertex_atts(VAOs[0], VBOs[0], EBOs[0], ground_vertices, sizeof(ground_vertices), ground_indices, sizeof(ground_indices));
 	bind_scene_vertex_atts(VAOs[1], VBOs[1], EBOs[1], road_vertices, sizeof(road_vertices), road_indices, sizeof(road_indices));
 
-	glm::mat4 model, view, projection;
-	glm::vec3 cameraPos, cameraTarget;
-
 	// Bind to framebuffer so images displayed there rather than screen
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
 
@@ -356,33 +382,6 @@ void render_scene(struct scene *scene)
 	glUseProgram(context->sceneShader);
 	glUniform1i(glGetUniformLocation(context->sceneShader, "ourTexture"), 0);
 
-	// Model Tranformations -- None atm so commented out
-	model = glm::mat4(1.0f);
-	// model = glm::rotate(model, glm::radians(90.0f * (float) scene->camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	// View Transformation -- Calculated by picking a position and a point to look at
-	cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
-	
-	cameraTarget = glm::vec3(
-		-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
-		scene->camera.y + sin((M_PI / 2) * scene->camera.pitch * cos((M_PI / 2) * scene->camera.yaw)),
-		scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
-
-	view = glm::lookAt(cameraPos, cameraTarget, glm::vec3(sin((M_PI / 2) * scene->camera.roll), cos((M_PI / 2) * scene->camera.roll), 0.0));
-
-	// Projection -- Sets perspective (FOV 45 degrees and in perspective projection)
-	projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-	//Testing get positions of road vertexs
-	// std::cout << glm::to_string(projection) << std::endl;
-	// std::cout << glm::to_string(view) << std::endl;
-	// std::cout << glm::to_string(model) << std::endl;
-
-	get_vertex_in_clip_space(road_vertices[0],projection,view,model);
-	get_vertex_in_clip_space(road_vertices[1],projection,view,model);
-	get_vertex_in_clip_space(road_vertices[2],projection,view,model);
-	get_vertex_in_clip_space(road_vertices[3],projection,view,model);
-
 	// Links up Model, View and Projection matrix with shaders
 	GLuint modelLoc = glGetUniformLocation(context->sceneShader, "model");
 	GLuint viewLoc = glGetUniformLocation(context->sceneShader, "view");
@@ -392,17 +391,16 @@ void render_scene(struct scene *scene)
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-	
 
 	// Render ground
 	// Set channel to 1
-	glUniform1i(channelLoc,1);
-	glBindVertexArray(VAOs[0]);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	// glUniform1i(channelLoc,1);
+	// glBindVertexArray(VAOs[0]);
+	// glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	// Render road
 	// Set channel to 0
-	glUniform1i(channelLoc,0);
+	glUniform1i(channelLoc, 0);
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -423,15 +421,15 @@ GLFWwindow *init_gl_and_get_window()
 {
 	// glfw: initialize and configure
 	glfwInit();
-	#ifdef OGL4
+#ifdef OGL4
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	#else
+#else
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	#endif
+#endif
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);  
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 	// glfw window creation
 	GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", NULL, NULL);
@@ -452,15 +450,18 @@ GLFWwindow *init_gl_and_get_window()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
 
-	int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	int flags;
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
 		glEnable(GL_DEBUG_OUTPUT);
-		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-	} else {
-		std::cout << "We don't have debugging" << std::endl; 
+	}
+	else
+	{
+		std::cout << "We don't have debugging" << std::endl;
 	}
 	return window;
 }
@@ -491,7 +492,7 @@ void bind_texture(GLuint *texture, char *location)
 
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
-	int total_size =  3 * sizeof(GLfloat); // + sizeof(GLuint);
+	int total_size = 3 * sizeof(GLfloat); // + sizeof(GLuint);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -551,10 +552,11 @@ void terminate_context()
 }
 
 #ifdef OGL4
-double get_mean_pixel_value(GLuint texture) {	
-	
+double get_mean_pixel_value(GLuint texture)
+{
+
 	glFinish();
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
 
@@ -562,12 +564,11 @@ double get_mean_pixel_value(GLuint texture) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
 	// std::clock_t    start;
-    // start = std::clock();
+	// start = std::clock();
 
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
 	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
-
 
 	// Make sure all buffers have been loaded
 	glFinish();
@@ -576,10 +577,11 @@ double get_mean_pixel_value(GLuint texture) {
 
 	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) ;
+	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT);
 }
 #else
-double get_mean_pixel_value(GLuint texture) {
+double get_mean_pixel_value(GLuint texture)
+{
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -605,60 +607,102 @@ double get_mean_pixel_value(GLuint texture) {
 	{
 		for (int y = 0; y < mipmapLevelHeight; y++)
 		{
-			cumR += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 0] * 255);
-			cumG += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 1] * 255);
-			cumB += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 2] * 255);
+			cumR += static_cast<int>(pixels[x * 3 + y * mipmapLevelWidth + 0] * 255);
+			cumG += static_cast<int>(pixels[x * 3 + y * mipmapLevelWidth + 1] * 255);
+			cumB += static_cast<int>(pixels[x * 3 + y * mipmapLevelWidth + 2] * 255);
 		}
 	}
-	std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight)<< std::endl;
+	std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight) << std::endl;
 	delete[] pixels;
 	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
 #endif
 
-void APIENTRY glDebugOutput(GLenum source, 
-                            GLenum type, 
-                            GLuint id, 
-                            GLenum severity, 
-                            GLsizei length, 
-                            const char *message, 
-                            const void *userParam)
+void APIENTRY glDebugOutput(GLenum source,
+														GLenum type,
+														GLuint id,
+														GLenum severity,
+														GLsizei length,
+														const char *message,
+														const void *userParam)
 {
-    // ignore non-significant error/warning codes
-    if(id == 131169 || id == 131185 || id == 131218 || id == 131204) return; 
+	// ignore non-significant error/warning codes
+	if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+		return;
 
-    std::cout << "---------------" << std::endl;
-    std::cout << "Debug message (" << id << "): " <<  message << std::endl;
+	std::cout << "---------------" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
 
-    switch (source)
-    {
-        case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
-        case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
-        case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
-    } std::cout << std::endl;
+	switch (source)
+	{
+	case GL_DEBUG_SOURCE_API:
+		std::cout << "Source: API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		std::cout << "Source: Window System";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		std::cout << "Source: Shader Compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		std::cout << "Source: Third Party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		std::cout << "Source: Application";
+		break;
+	case GL_DEBUG_SOURCE_OTHER:
+		std::cout << "Source: Other";
+		break;
+	}
+	std::cout << std::endl;
 
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break; 
-        case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
-        case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
-        case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
-        case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
-    } std::cout << std::endl;
-    
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
-        case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
-    } std::cout << std::endl;
-    std::cout << std::endl;
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		std::cout << "Type: Error";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		std::cout << "Type: Deprecated Behaviour";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		std::cout << "Type: Undefined Behaviour";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		std::cout << "Type: Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		std::cout << "Type: Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		std::cout << "Type: Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		std::cout << "Type: Push Group";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		std::cout << "Type: Pop Group";
+		break;
+	case GL_DEBUG_TYPE_OTHER:
+		std::cout << "Type: Other";
+		break;
+	}
+	std::cout << std::endl;
+
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_HIGH:
+		std::cout << "Severity: high";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		std::cout << "Severity: medium";
+		break;
+	case GL_DEBUG_SEVERITY_LOW:
+		std::cout << "Severity: low";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		std::cout << "Severity: notification";
+		break;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
