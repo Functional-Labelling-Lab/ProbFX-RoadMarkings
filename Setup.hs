@@ -47,7 +47,7 @@ addExtraLibs (description, buildInfo) flags = do
                 Just $ lib
                     { libBuildInfo =
                         libraryBuildInfo
-                          { extraLibDirs = ("/usr/local/lib") : (dir ++ "/dist-newstyle/backend-libs") : extraLibDirs libraryBuildInfo
+                          { extraLibDirs = ("/usr/local/lib") : (dir ++ "/backend/lib") : extraLibDirs libraryBuildInfo
                           }
                     }
             }

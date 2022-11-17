@@ -11,7 +11,7 @@ void set_target_img(const char* str);
 
 void render_scene(struct scene *scene);
 double get_mean_pixel_value(GLuint texture);
-void find_texture_difference(GLuint texture1,GLuint texture2);
+void get_image_mask(GLuint texture1,GLuint texture2, GLuint channel);
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll);
 

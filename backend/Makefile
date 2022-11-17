@@ -1,7 +1,7 @@
 .PHONY: configure clean build
 
-build_dir = ../dist-newstyle/backend-build
-lib_dir = ../dist-newstyle/backend-libs
+build_dir = build
+lib_dir = lib
 
 all: configure build
 
