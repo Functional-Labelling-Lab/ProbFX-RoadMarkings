@@ -98,13 +98,13 @@ trainModel = do
         liftS $ print $ head pitches
 
 
--- main :: IO ()
--- -- main = trainModel
+main :: IO ()
+main = trainModel
 -- main = do
 --     let imgHls = getHoughLines "data/road.jpg"
 --     let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
 --     print imgHls
 --     print err
 
-main :: IO Int32
-main = testBedExample
+-- main :: IO Int32
+-- main = testBedExample
