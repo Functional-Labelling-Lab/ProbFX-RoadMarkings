@@ -16,11 +16,18 @@ maintainer:         bcieslar2001@gmail.com
 
 build-type: Custom 
 
+extra-source-files:
+    backend/src/hough.cpp
+    backend/src/hough.h
+    backend/src/main.cpp
+    backend/src/main.h
+    backend/src/bindings.cpp
+    backend/src/bindings.h
+    backend/src/shaders.cpp
+    backend/src/shaders.h
+
 custom-setup
   setup-depends: base, Cabal, process, directory
-
-extra-source-files:
-    backend/src
 
 library
     hs-source-dirs:   backend
@@ -29,7 +36,9 @@ library
 
     -- Order of libraries is important, reordering will cause linking failures
     extra-libraries: 
-        RoadMarkingsBackend, glad, glfw3, GL, dl, m, stdc++fs, pthread, stdc++
+        RoadMarkingsBackend, glad, glfw3, 
+        opencv_core, opencv_imgcodecs, opencv_highgui, opencv_imgproc,
+        GL, dl, m, stdc++fs, pthread, stdc++
 
 
 executable ProbFX-RoadMarkings
@@ -38,4 +47,5 @@ executable ProbFX-RoadMarkings
     build-depends:    base, prob-fx, ProbFX-RoadMarkings, fused-effects
 
     hs-source-dirs:   src
+    other-modules:    Hough
     default-language: Haskell2010

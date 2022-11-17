@@ -21,9 +21,13 @@ import Foreign
 import Foreign.Marshal.Alloc
 import OpenSum (Member)
 import System.IO.Unsafe
+import Hough (compareLines)
 
 clamp :: (Double, Double) -> Double -> Double
 clamp (a, b) = min b . max a
+
+
+--- Probabilistic Model
 
 
 --- Training
@@ -95,7 +99,12 @@ trainModel = do
 
 
 main :: IO ()
-main = trainModel
+-- main = trainModel
+main = do
+    let imgHls = getHoughLines "data/road.jpg"
+    let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
+    print imgHls
+    print err
 
 -- main :: IO Int32
 -- main = testBedExample
