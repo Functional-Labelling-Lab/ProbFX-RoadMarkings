@@ -10,13 +10,23 @@ main :: IO ()
 main =
   defaultMainWithHooks
     simpleUserHooks
-      { preConf = buildBackend,
-        confHook = addExtraLibs
+      { preConf = buildBackendPreConf,
+        confHook = addExtraLibs,
+        preBuild = buildBackendPreBuild
       }
 
-buildBackend :: Args -> ConfigFlags -> IO HookedBuildInfo
-buildBackend _ _ = do
+buildBackendPreConf :: Args -> ConfigFlags -> IO HookedBuildInfo
+buildBackendPreConf _ _ = do
+  putStrLn "\n>> Running Pre-Configure Hook  <<\n"
   readProcess "make" ["--directory=backend"] "" >>= putStrLn
+  putStrLn ">> Pre-Configure Hook Complete <<\n"
+  return emptyHookedBuildInfo
+
+buildBackendPreBuild :: Args -> BuildFlags -> IO HookedBuildInfo
+buildBackendPreBuild _ _ = do
+  putStrLn "\n>> Running Pre-Build Hook  <<\n"
+  readProcess "make" ["--directory=backend"] "" >>= putStrLn
+  putStrLn ">> Pre-Build Hook Complete <<\n"
   return emptyHookedBuildInfo
 
 addExtraLibs ::
