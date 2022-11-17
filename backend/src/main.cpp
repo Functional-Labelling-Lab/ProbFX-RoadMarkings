@@ -150,7 +150,6 @@ void init_context()
 	glGenBuffers(1, &ssbo);
 
 	context->ssbo = ssbo;
-	std::cout << "Compiling Loading" << std::endl;
 	// Load compute shader into memory	
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./backend/src/shaders/mse.computeshader", std::ios::in);
@@ -161,7 +160,6 @@ void init_context()
 		ComputeShaderStream.close();
 	}
 
-	std::cout << "Compiling CompShader" << std::endl;
 	// Compile the compute shader
 	char * prog = &ComputeShaderCode[0];
 	GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
@@ -171,7 +169,6 @@ void init_context()
     GLchar message[1024];
     glGetShaderInfoLog(mse_shader, 1024, &log_length, message);
 	// Link the compute shader
-	std::cout << "Linking compShader" << std::endl;
 	GLuint mse_program = glCreateProgram();
 	glAttachShader(mse_program, mse_shader);
 	glLinkProgram(mse_program);
@@ -181,12 +178,12 @@ void init_context()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
+
 	// Allocate space for it (sizeof(positions) + sizeof(colors)).
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
 				sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
 				NULL,                                  // no data
 				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
-
 	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
 	std::cout << message << std::endl;
@@ -391,10 +388,11 @@ GLFWwindow *init_gl_and_get_window()
 	glfwInit();
 	#ifdef OGL4
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	#else
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	#endif
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	#endif
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);  
@@ -419,16 +417,19 @@ GLFWwindow *init_gl_and_get_window()
 	}
 
 	int flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-
+	#ifdef OGL4
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS); 
-		// glDebugMessageCallback(glDebugOutput, nullptr);
-		// glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	} else {
 		std::cout << "We don't have debugging" << std::endl; 
 	}
+	#else
+	std::cout << "We don't have debugging" << std::endl; 
+	#endif
 	return window;
 }
 
@@ -519,7 +520,7 @@ void terminate_context()
 
 #ifdef OGL4
 double get_mean_pixel_value(GLuint texture) {	
-	
+	std::cout << "Got here" << std::endl;
 	glFinish();
 	
 	glActiveTexture(GL_TEXTURE0);
@@ -549,7 +550,7 @@ double get_mean_pixel_value(GLuint texture) {
 	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
-double get_mean_pixel_value() {
+double get_mean_pixel_value(GLuint texture) {
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
