@@ -11,7 +11,7 @@ void check_context(){
 
 void render_scene_c(struct scene *scene) {
 	check_context();
-	render_scene(scene);
+	render_scene(scene, context->sceneFBO);
 }
 void set_target_img_c(const char *str) {
 	check_context();

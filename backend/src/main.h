@@ -9,11 +9,16 @@
 extern "C" {
 void set_target_img(const char* str);
 
-void render_scene(struct scene *scene);
+void render_scene(struct scene *scene, GLuint FBO);
 double get_mean_pixel_value(GLuint texture);
 void find_texture_difference(GLuint texture1,GLuint texture2);
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll);
+
+struct texture_fbo {
+  GLuint texture;
+  GLuint frameBuffer;
+}
 
 struct scene
 {

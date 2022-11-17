@@ -48,7 +48,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	while (!glfwWindowShouldClose(context->window))
 	{
 		// Renders into sceneFBO where the texture is in sceneTexture
-		render_scene(&scene);
+		render_scene(&scene, context->sceneFBO);
 
 		// Renders into diffFBO where the texture is in diffTexture
 		find_texture_difference(context->sceneTexture,context->targetTexture);
@@ -269,7 +269,7 @@ sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
 	return vertex;
 }
 
-void render_scene(struct scene *scene)
+void render_scene(struct scene *scene, GLuint FBO)
 {
 	float planeSize = 100.0f;
 
@@ -313,7 +313,7 @@ void render_scene(struct scene *scene)
 	int modelLoc, viewLoc, projectionLoc, channelLoc;
 
 	// Bind to framebuffer so images displayed there rather than screen
-	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	// Clear buffer
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
