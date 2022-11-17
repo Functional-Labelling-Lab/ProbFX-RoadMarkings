@@ -16,15 +16,14 @@ maintainer:         bcieslar2001@gmail.com
 
 build-type: Custom 
 
+-- cannot include directories, so must list all files
 extra-source-files:
-    backend/src/hough.cpp
-    backend/src/hough.h
-    backend/src/main.cpp
-    backend/src/main.h
-    backend/src/bindings.cpp
-    backend/src/bindings.h
-    backend/src/shaders.cpp
-    backend/src/shaders.h
+    backend/Makefile
+    backend/CMakeLists.txt
+    backend/src/*.cpp
+    backend/src/*.h
+    backend/src/shaders/*.glsl
+    backend/src/shaders/*.computeshader
 
 custom-setup
   setup-depends: base, Cabal, process, directory
