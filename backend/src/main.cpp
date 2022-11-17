@@ -51,10 +51,10 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		render_scene(&scene);
 
 		// Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference(context->sceneTexture,context->targetTexture);
+		get_image_mask(context->sceneTexture,context->targetTexture,0);
 
 		// Render to screen for visual debugging
-		render_to_screen(context->diffTexture);
+		render_to_screen(context->sceneTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
@@ -214,7 +214,7 @@ void render_to_screen(GLuint texture)
 {	
 	// Switch to screen output buffer	
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);	
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);	
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);	
 	glClear(GL_COLOR_BUFFER_BIT);	
 	// Links texture locations to shaders (I think)	
 	glUseProgram(context->outShader);	
@@ -229,17 +229,17 @@ void render_to_screen(GLuint texture)
 	glfwPollEvents();
 }
 
-void find_texture_difference(GLuint texture1,GLuint texture2)
+void get_image_mask(GLuint texture1,GLuint texture2,GLuint channel)
 {
 	// Switch to difference test_bed buffer and clear it
 	glBindFramebuffer(GL_FRAMEBUFFER, context->diffFBO);
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Links texture locations to shaders (I think)
 	glUseProgram(context->diffShader);
-	glUniform1i(glGetUniformLocation(context->diffShader, "texture1"), 0);
-	glUniform1i(glGetUniformLocation(context->diffShader, "texture2"), 1);
+	glUniform1i(glGetUniformLocation(context->diffShader, "mask"), 0);
+	glUniform1i(glGetUniformLocation(context->diffShader, "texture"), 1);
 
 	// Load textures
 	glActiveTexture(GL_TEXTURE0);
