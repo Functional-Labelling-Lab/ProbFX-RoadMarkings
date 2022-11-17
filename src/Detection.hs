@@ -101,8 +101,10 @@ trainModel = do
 main :: IO ()
 -- main = trainModel
 main = do
-    let ls = getHoughLines "data/road.jpg"
-    print ls
+    let imgHls = getHoughLines "data/road.jpg"
+    let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
+    print imgHls
+    print err
 
 -- main :: IO Int32
 -- main = testBedExample
