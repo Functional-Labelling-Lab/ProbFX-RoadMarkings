@@ -13,40 +13,32 @@
 module Main (initRoadSample, main, trainModel) where
 
 import Debug.Trace ( trace )
-import Model ( Model, normal, uniform )
 import System.Environment ( getArgs )
-import Prog ( call )
-import Effects.ObsReader ( ObsReader(Ask) )
-import Model ( Model(Model), normal, uniform )
-import PrimDist ( PrimDist(BernoulliDist, UniformDist) )
-import Effects.Dist ( Dist(Dist) )
 import Data.Kind (Constraint)
 import Env ( Env, Observables, Assign((:=)), (<:>), nil, get )
-import Inference.MH ( mh, mhRaw )
-import Inference.SIM ( runSimulate, simulate )
-import Sampler ( sampleIO, liftS )
 import Control.Algebra (Has)
+
+import CppFFI (Scene (..), Camera (..), Texture,
+               getSceneFBO, renderScene, findTextureDifference,
+               getMeanPixelValue, testBed, setTargetImg, createTextureFBO,
+               TextureFBO (frameBuffer, texture), getTargetTexture, getHoughLines)
 
 import Data.List (partition)
 import Foreign.C.String
-import CppFFI
 import Foreign
     ( Storable(..), StablePtr(..), Int32, malloc, Storable(poke) )
 import Foreign.Marshal.Alloc
 import OpenSum (Member)
 import System.IO.Unsafe
 import Hough (compareLines)
-
--- TODO: Implement
-envToScene :: Env '[ "y" ':= Double, "roadWidth" ':= Double] -> Scene
-envToScene = undefined
-
-sceneToEnv :: Scene -> Env '[ "y" ':= Double, "roadWidth" ':= Double]
-sceneToEnv = undefined
-
-clamp :: (Double, Double) -> Double -> Double
-clamp (a, b) = min b . max a
-
+import Model (Model, uniform, normal)
+import Sampler (sampleIO, liftS, sampleIOCustom, Sampler)
+import Inference.SIM (simulate)
+import Inference.MH (mh)
+import Control.Effect.ObsReader (ask)
+import Control.Carrier.ObsReader (runObsReader)
+import Control.Algebra (run)
+import Data.Maybe (fromJust)
 
 --- Probabilistic Model
 
@@ -62,21 +54,58 @@ type RoadEnv =
   , "error"     := Double
  ]
 
-initRoadSample :: forall env sig m. (Observables env '["x", "y", "pitch", "yaw", "roll"] Double, Has (Model env) sig m) => m Scene
+emptyRoadEnv :: Env RoadEnv
+emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #yaw := [] <:> #roll := [] <:> #error := repeat 0 <:> nil
+
+-- TODO: Implement
+envToScene :: Env RoadEnv -> Maybe Scene
+envToScene env = run $ runObsReader env $ do
+    mX <- ask @RoadEnv #x
+    mY <- ask @RoadEnv #y
+    -- let mZ = Just 0
+    mZ <- ask @RoadEnv #z
+    mPitch <- ask @RoadEnv #pitch
+    let mYaw = Just 0
+    -- mYaw <- ask @RoadEnv #yaw
+    let mRoll = Just 0
+    -- mRoll <- ask @RoadEnv #roll
+    let mError = Just 0
+    -- mError <- ask @RoadEnv #error
+
+    return $ case (mX, mY, mZ, mPitch, mYaw, mRoll, mError) of
+        (Just x, Just y, Just z, Just pitch, Just yaw, Just roll, Just error) -> Just $ Scene {
+            camera = Camera {
+                x = x,
+                y = y,
+                z = z,
+                pitch = pitch,
+                yaw = yaw,
+                roll = roll
+            }
+        }
+        _ -> Nothing
+
+sceneToEnv :: Scene -> Env RoadEnv
+sceneToEnv = undefined
+
+clamp :: (Double, Double) -> Double -> Double
+clamp (a, b) = min b . max a
+
+initRoadSample :: forall sig m. (Has (Model RoadEnv) sig m) => m Scene
 initRoadSample = do
-    x <- uniform @env (-1) 2 #x
-    y <- uniform @env (-1) 2 #y
-    -- z <- uniform @env (-0.01) 0.01 #z
-    pitch <- normal @env 0 0.3 #pitch
+    x <- uniform @RoadEnv (-1) 2 #x
+    y <- uniform @RoadEnv (-1) 2 #y
+    z <- uniform @RoadEnv (-0.01) 0.01 #z
+    pitch <- normal @RoadEnv 0 0.3 #pitch
     -- yaw <- normal @env 0.2 0.3 #yaw
     -- roll <- normal @env 0.2 0.3 #roll
 
-    return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=0, yaw=0, roll=0} }
+    return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=0, roll=0} }
 
-roadGenerationModel :: forall env sig m. (Observables env ["x", "y", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m) => m ()
+roadGenerationModel :: forall sig m. (Has (Model RoadEnv) sig m) => m ()
 roadGenerationModel = do
-    roadSample <- initRoadSample @env
-    error <- normal @env (errorFunction roadSample) 6 #error
+    roadSample <- initRoadSample
+    error <- normal @RoadEnv (errorFunction roadSample) 6 #error
     return ()
 
 --- Main code
@@ -84,31 +113,29 @@ roadGenerationModel = do
 --- Do not use this in non-thread-safe code, please 
 
 errorFunction :: Scene -> Double
-errorFunction s = unsafePerformIO $ do
-    scene <- malloc
-    poke scene s
-
+errorFunction scene = unsafePerformIO $ do
     sceneFBO <- getSceneFBO -- returns global sceneFBO
     renderScene scene sceneFBO
 
     findTextureDifference -- implicitly uses global sceneFBO
-
-
+    getMeanPixelValue
 
 testBedExample :: IO Int32
 testBedExample = testBed 0.2 0.2 0 (-0.0) 0 0
 
 --- Run training loop on the image stored in frameBuffer
+
+trainModelSampler :: Texture -> Sampler Scene
+trainModelSampler texture = do
+    traces <- mh 100 roadGenerationModel emptyRoadEnv ["x", "y", "z", "pitch", "yaw", "roll"]
+
+    return $ fromJust $ envToScene $ head traces
+
 trainModel :: Texture -> IO Scene
-trainModel texture = sampleIO $ do
-    let mh_env :: Env RoadEnv
-        mh_env = (#x := []) <:> (#y := []) <:> (#z := []) <:> (#pitch := []) <:> (#yaw := []) <:> (#roll := []) <:> (#error := repeat 0) <:> nil
-    traceMHs <- mh 100 (roadGenerationModel @RoadEnv) ((), mh_env) ["x", "y", "pitch"]
+trainModel = sampleIO . trainModelSampler
 
-    -- TODO: remove error from finalTrace
-    let finalTrace = last traceMHs
-
-    return $ envToScene finalTrace
+trainModelSeed :: Int -> Texture -> IO Scene
+trainModelSeed seed = sampleIOCustom seed . trainModelSampler
 
 trainModelFromFile :: String -> IO Scene
 trainModelFromFile path = do
@@ -117,39 +144,34 @@ trainModelFromFile path = do
     targetTexture <- getTargetTexture
     trainModel targetTexture
 
-benchmark :: IO ()
-benchmark = do
+benchmark :: Int -> IO ()
+benchmark seed = do
     -- Create a scene to try and run the algorithm on.
-    -- TODO: use sampleIOCustom instead of sampleIO so seed can be provided.
-    let env = (#y := []) <:> (#roadWidth := []) <:> nil
-    (scene, _) <- sampleIO $ simulate (const initRoadSample) env undefined
+    (scene, _) <- sampleIOCustom seed $ simulate emptyRoadEnv initRoadSample
 
     -- Render this scene into an image
-    -- TODO: I don't think rendering should require IO, so maybe make it not
-    --       I think it should take a buffer as input and write it to that
-    --       or take a buffer as input idk
     targetTextureFBO <- createTextureFBO
-    s <- malloc
-    poke s scene
-    renderScene s (frameBuffer targetTextureFBO)
+    renderScene scene (frameBuffer targetTextureFBO)
 
     -- Use mh to work backwards to the origional scene
-    -- TODO: trainModel needs to be altered to take all the above stuff as input,
-    --       and return the predicted scene
-    predictedScene <- trainModel (texture targetTextureFBO)
+    predictedScene <- trainModelSeed seed (texture targetTextureFBO)
 
-    -- TODO: replace undefined with some diff function which says how close
-    --       to the input parameters we got.
-    return (undefined scene predictedScene)
+    print scene
+    print predictedScene
+    
+    -- return (undefined scene predictedScene)
 
+-- Scene {camera = Camera {x = 0.6879765442476931, y = 0.10672289591094897, z = 6.263997681267841e-4, pitch = 0.30004201200001984, yaw = 0.0, roll = 0.0}}
+-- Scene {camera = Camera {x = 1.9423491560450756e-2, y = 0.13973177834102612, z = 6.743796537081953e-3, pitch = -0.20179312329488874, yaw = 0.0, roll = 0.
 
 main :: IO ()
--- main = trainModel
-main = do
-    let imgHls = getHoughLines "data/road.jpg"
-    let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
-    print imgHls
-    print err
+-- main = trainModelFromFile "data/road.jpg" >>= print
+main = benchmark 42
+-- main = do
+--     let imgHls = getHoughLines "data/road.jpg"
+--     let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
+--     print imgHls
+--     print err
 
 -- main :: IO Int32
 -- main = testBedExample

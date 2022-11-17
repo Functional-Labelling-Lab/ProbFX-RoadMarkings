@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include "hough.h"
+#include "main.h"
 
 extern "C" {
 void render_scene_c(struct scene *scene);
@@ -11,7 +12,10 @@ int test_bed_c(double x, double y, double z, double pitch, double yaw, double ro
 double get_mean_pixel_value_c();
 void find_texture_difference_c();
 detected_lines_t *hough_lines_c(const char *str);
-GLuint create_texture_fbo_c();
+
+struct texture_fbo *create_texture_fbo_c();
+GLuint get_scene_fbo_c();
+GLuint get_target_texture_c();
 }
 
 #endif

@@ -35,3 +35,19 @@ detected_lines_t *hough_lines_c(const char *str) {
 	check_context();
 	return detect_lines(str);
 }
+
+struct texture_fbo *create_texture_fbo_c() {
+	check_context();
+	return create_texture_fbo();
+}
+
+GLuint get_scene_fbo_c() {
+	check_context();
+	return get_scene_fbo();
+}
+
+GLuint get_target_texture_c() {
+	check_context();
+	return get_target_texture();
+}
+

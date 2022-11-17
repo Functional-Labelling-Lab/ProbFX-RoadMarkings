@@ -14,7 +14,11 @@ module CppFFI ( Scene(..)
               , GLuint
               , Texture
               , FrameBuffer
-              , getSceneFBO) where
+              , getSceneFBO
+              , getTargetTexture
+              , Line
+              , Point
+              , getHoughLines) where
 
 import GHC.Generics (Generic(..))
 import Foreign (Storable(..), Ptr(..))
@@ -22,6 +26,7 @@ import Foreign.CStorable (CStorable(..))
 import Foreign.C.Types (CChar, CInt(..), CUInt(..))
 import Foreign.C.String
 import Foreign
+import System.IO.Unsafe (unsafePerformIO)
 
 type GLuint = CUInt
 type Texture = GLuint
@@ -94,7 +99,7 @@ instance Storable DetectedLines where
     poke = cPoke
     peek = cPeek
 
-foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> FrameBuffer -> IO ()
+foreign import ccall unsafe "render_scene_c" renderScene' :: Ptr Scene -> FrameBuffer -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg' :: CString -> IO ()
 foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: IO Double
@@ -132,3 +137,9 @@ setTargetImg s = newCString s >>= setTargetImg'
 
 createTextureFBO :: IO TextureFBO
 createTextureFBO = createTextureFBO' >>= peek
+
+renderScene :: Scene -> FrameBuffer -> IO ()
+renderScene scene fbo = do
+    s <- malloc
+    poke s scene
+    renderScene' s fbo

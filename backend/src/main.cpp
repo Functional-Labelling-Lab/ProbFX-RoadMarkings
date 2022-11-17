@@ -552,8 +552,8 @@ double get_mean_pixel_value(GLuint texture) {
 	int mipmapLevelWidth = -1, mipmapLevelHeight = -1;
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_WIDTH, &mipmapLevelWidth);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT, &mipmapLevelHeight);
-	std::cout << mipmapLevelWidth << std::endl;
-	std::cout << mipmapLevelHeight << std::endl;
+	// std::cout << mipmapLevelWidth << std::endl;
+	// std::cout << mipmapLevelHeight << std::endl;
 
 	// Times by 3 for RGB
 	GLfloat *pixels = new GLfloat[mipmapLevelWidth * mipmapLevelHeight * 3];
@@ -572,7 +572,7 @@ double get_mean_pixel_value(GLuint texture) {
 			cumB += static_cast<int>(pixels[x*3 + y*mipmapLevelWidth + 2] * 255);
 		}
 	}
-	std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight)<< std::endl;
+	// std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight)<< std::endl;
 	delete[] pixels;
 	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
@@ -624,3 +624,33 @@ void APIENTRY glDebugOutput(GLenum source,
     } std::cout << std::endl;
     std::cout << std::endl;
 }
+
+/* Creates a buffer and a texture,
+   binds the texture to the buffer,
+	 returns both. */
+struct texture_fbo *create_texture_fbo() {
+	struct texture_fbo *tfbo = (struct texture_fbo *) malloc(sizeof(struct texture_fbo));
+	if (tfbo == NULL) {
+		exit(EXIT_FAILURE);
+	}
+	
+	/* Create the buffers */
+	glGenBuffers(1, &tfbo->frameBuffer);
+	glGenTextures(1, &tfbo->texture);
+
+	/* Bind texture to buffer */
+	bind_frame_buffer(tfbo->frameBuffer, tfbo->frameBuffer);
+
+	return tfbo;
+}
+
+/* Returns the scene frame buffer stored in the global context */
+GLuint get_scene_fbo() {
+	return context->sceneFBO;
+}
+
+/* Returns the scene texture stored in the global context */
+GLuint get_target_texture() {
+	return context->sceneTexture;
+}
+

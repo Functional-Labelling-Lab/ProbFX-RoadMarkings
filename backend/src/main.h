@@ -13,6 +13,10 @@ void render_scene(struct scene *scene, GLuint FBO);
 double get_mean_pixel_value(GLuint texture);
 void find_texture_difference(GLuint texture1,GLuint texture2);
 
+struct texture_fbo *create_texture_fbo();
+GLuint get_scene_fbo();
+GLuint get_target_texture();
+
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll);
 
 struct texture_fbo {
