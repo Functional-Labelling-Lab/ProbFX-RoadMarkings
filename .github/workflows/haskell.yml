@@ -20,6 +20,9 @@ jobs:
       with:
         ghc-version: '8.10.3'
         cabal-version: '3.2'
+    - uses: Dovyski/setup-opencv-action@v1.1
+      with:
+        opencv-version: '4.6.0'
 
     - name: Cache
       uses: actions/cache@v3

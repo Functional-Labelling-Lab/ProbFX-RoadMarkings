@@ -20,6 +20,8 @@ The long-term goal is to build the pipeline described below...
 ├── Setup.hs                   # Hooks for running C++ side build
 ├── cabal.project              # ProbFX dependency
 |
+├── data ───── ... # Data used for testing (i.e images)
+|
 ├── backend ── ... # The C++ side of the project
 ├── app ────── ... # The main 
 └── src ────── ... # The Haskell side of the project (contains bindings, logic)
