@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <string>
 
 
 extern "C" {
@@ -75,10 +76,10 @@ sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z);
 GLFWwindow *init_gl_and_get_window();
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
-void bind_texture(GLuint *texture, char *location);
-void get_path(const char *target, char *dest);
+void bind_texture(GLuint *texture, std::string &location);
+std::string get_path(std::string &target);
 void render_to_screen(GLuint texture);
-GLuint load_texture(const char *str);
+GLuint load_texture(std::string str);
 void bind_frame_buffer(GLuint FBO, GLuint textureBuffer);
 void terminate_context();
 #endif

@@ -1,6 +1,6 @@
 source-repository-package
     type: git
-    location: https://github.com/min-nguyen/prob-fx.git
-    tag: 7660c896bc5d2bda2229e93f1ec91052107a54d1
+    location: https://github.com/Functional-Labelling-Lab/ProbFX.git
+    tag: ba53faf6e7002b0a9304b6da38735ac5d5cd726c
 
 packages: ./

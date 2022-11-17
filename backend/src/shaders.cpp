@@ -7,15 +7,12 @@
 #include <sstream>
 
 #include "main.h"
+#include "shaders.h"
 
-void check_compile_errors(GLuint shader, std::string type);
-GLuint load_shader(const char *vertexPath, const char *fragmentPath);
-
-GLuint load_shader(const char *vertexSubPath, const char *fragmentSubPath)
+GLuint load_shader(std::string vertexSubPath, std::string fragmentSubPath)
 {
-	char vertexPath[100], fragmentPath[100];
-	get_path(vertexSubPath, vertexPath);
-	get_path(fragmentSubPath, fragmentPath);
+	auto vertexPath = get_path(vertexSubPath);
+	auto fragmentPath = get_path(fragmentSubPath);
 	GLuint id;
 	// 1. retrieve the vertex/fragment source code from filePath
 	std::string vertexCode;
@@ -28,8 +25,8 @@ GLuint load_shader(const char *vertexSubPath, const char *fragmentSubPath)
 	try
 	{
 		// open files
-		vShaderFile.open(vertexPath);
-		fShaderFile.open(fragmentPath);
+		vShaderFile.open(vertexPath.c_str());
+		fShaderFile.open(fragmentPath.c_str());
 		std::stringstream vShaderStream, fShaderStream;
 		// read file's buffer contents into streams
 		vShaderStream << vShaderFile.rdbuf();

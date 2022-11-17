@@ -9,6 +9,6 @@
 
 
 void check_compile_errors(GLuint shader, std::string type);
-GLuint load_shader(const char *vertexPath, const char *fragmentPath);
+GLuint load_shader(std::string vertexPath, std::string fragmentPath);
 
 #endif

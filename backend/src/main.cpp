@@ -5,13 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <math.h>
-#include <iostream>
-#include <filesystem>
-#include <string>
-#include <sstream>
-#include <fstream>
-#include <ctime>
+#include <bits/stdc++.h>
 
 #include "shaders.h"
 #include "main.h"
@@ -208,11 +202,10 @@ void bind_frame_buffer(GLuint FBO, GLuint textureBuffer)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-GLuint load_texture(const char *str)
+GLuint load_texture(std::string str)
 {
 	GLuint texture;
-	char texturePath[100];
-	get_path(str, texturePath);
+	std::string texturePath = get_path(str);
 	bind_texture(&texture, texturePath);
 	return texture;
 }
@@ -262,7 +255,7 @@ void find_texture_difference(GLuint texture1,GLuint texture2)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void set_target_img(const char *str)
+void set_target_img(const char* str)
 {
 	context->targetTexture = load_texture(str);
 }
@@ -371,13 +364,16 @@ void render_scene(struct scene *scene)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void get_path(const char *target, char *dest)
+std::string get_path(std::string &target)
 {
-	std::string stringCurrentPath = std::filesystem::current_path().string();
-	char *currentPath = new char[stringCurrentPath.length() + 1];
-	strcpy(currentPath, stringCurrentPath.c_str());
-	strcpy(dest, currentPath);
-	strcat(dest, target);
+	auto targetPath = std::filesystem::path(target);
+	std::filesystem::path stringCurrentPath = std::filesystem::current_path();
+	if (targetPath.is_absolute()) {
+		stringCurrentPath += std::filesystem::path(target);
+	} else {
+		stringCurrentPath /= std::filesystem::path(target);
+	}
+	return stringCurrentPath.string();
 }
 
 GLFWwindow *init_gl_and_get_window()
@@ -431,7 +427,7 @@ GLFWwindow *init_gl_and_get_window()
 	return window;
 }
 
-void bind_texture(GLuint *texture, char *location)
+void bind_texture(GLuint *texture, std::string &location)
 {
 	glGenTextures(1, texture);
 	glBindTexture(GL_TEXTURE_2D, *texture);
@@ -442,7 +438,7 @@ void bind_texture(GLuint *texture, char *location)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// Load image
 	int width, height, nrChannels;
-	unsigned char *data = stbi_load(location, &width, &height, &nrChannels, 0);
+	unsigned char *data = stbi_load(location.c_str(), &width, &height, &nrChannels, 0);
 	if (data)
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -518,7 +514,6 @@ void terminate_context()
 
 #ifdef OGL4
 double get_mean_pixel_value(GLuint texture) {	
-	std::cout << "Got here" << std::endl;
 	glFinish();
 	
 	glActiveTexture(GL_TEXTURE0);

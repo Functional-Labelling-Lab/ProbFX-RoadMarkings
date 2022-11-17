@@ -38,7 +38,7 @@ FetchContent_GetProperties(glad)
 if(NOT glad_POPULATED)
     FetchContent_Populate(glad)
     set(GLAD_PROFILE "core" CACHE STRING "OpenGL profile")
-    set(GLAD_API "gl=" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest")
+    set(GLAD_API "gl=4.6" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest")
     set(GLAD_GENERATOR "c" CACHE STRING "Language to generate the binding for")
     add_subdirectory(${glad_SOURCE_DIR} ${glad_BINARY_DIR})
 endif()
@@ -67,6 +67,6 @@ include_directories(${stb_image_SOURCE_DIR})
 
 # C++ compiler flags
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17 -fPIC")
+set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17 -fPIC -DOGL4")
 
 target_link_libraries(${PROJECT_NAME} GL dl glfw glad glm m stdc++fs)
