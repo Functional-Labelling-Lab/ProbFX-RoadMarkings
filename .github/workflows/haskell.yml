@@ -20,11 +20,8 @@ jobs:
       with:
         ghc-version: '8.10.3'
         cabal-version: '3.2'
-    - uses: Dovyski/setup-opencv-action@v1.1
-      with:
-        opencv-version: '4.6.0'
 
-    - name: Cache
+    - name: Cache Cabal
       uses: actions/cache@v3
       env:
         cache-name: cache-cabal
@@ -35,6 +32,20 @@ jobs:
           ${{ runner.os }}-build-${{ env.cache-name }}-
           ${{ runner.os }}-build-
           ${{ runner.os }}-
+    
+    - name: Cache OpenCV
+      id: opencv-cache
+      uses: actions/cache@v2
+      with:
+        path: ./opencv-install
+        key: ${{ runner.os }}-opencv-cache
+
+    - name: Install OpenCV
+      uses: rayandrews/with-opencv-action@v1
+      with:  
+        dir: ./opencv-install
+        cached: ${{ steps.opencv-cache.outputs.cache-hit }}
+        opencv-version: '4.6.0'
 
     - name: Install dependencies
       run: |
@@ -47,3 +58,4 @@ jobs:
 
     - name: Run tests
       run: cabal test all
+  
