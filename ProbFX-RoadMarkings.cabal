@@ -16,11 +16,11 @@ maintainer:         bcieslar2001@gmail.com
 
 build-type: Custom 
 
+extra-source-files:
+    backend/src/hough.cpp
+
 custom-setup
   setup-depends: base, Cabal, process, directory
-
-extra-source-files:
-    backend/src
 
 library
     hs-source-dirs:   backend
@@ -30,7 +30,7 @@ library
     -- Order of libraries is important, reordering will cause linking failures
     extra-libraries: 
         RoadMarkingsBackend, glad, glfw3, 
-        opencv_core, opencv_imgcodecs, opencv_highgui, opencv_imgproc
+        opencv_core, opencv_imgcodecs, opencv_highgui, opencv_imgproc,
         GL, dl, m, stdc++fs, pthread, stdc++
 
 

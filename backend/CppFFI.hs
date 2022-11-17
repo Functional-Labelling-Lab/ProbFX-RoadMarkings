@@ -2,7 +2,11 @@
 {-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module CppFFI (Scene(..), Camera(..), renderScene, setTargetImg, testBed, getMeanPixelValue, findTextureDifference, getHoughLines) where
+module CppFFI (Scene(..), Camera(..), renderScene, 
+                setTargetImg, testBed, getMeanPixelValue,
+                findTextureDifference, getHoughLines,
+                Point, Line
+                ) where
 
 import           Foreign
 import           Foreign           (Ptr (..), Storable (..))
