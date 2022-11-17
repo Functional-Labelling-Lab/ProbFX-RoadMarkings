@@ -18,7 +18,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 struct texture_fbo {
   GLuint texture;
   GLuint frameBuffer;
-}
+};
 
 struct scene
 {

@@ -19,11 +19,11 @@ module CppFFI ( Scene(..)
 import GHC.Generics (Generic(..))
 import Foreign (Storable(..), Ptr(..))
 import Foreign.CStorable (CStorable(..))
-import Foreign.C.Types (CChar, CInt(..))
+import Foreign.C.Types (CChar, CInt(..), CUInt(..))
 import Foreign.C.String
 import Foreign
 
-type GLuint = CInt
+type GLuint = CUInt
 type Texture = GLuint
 type FrameBuffer = GLuint
 
@@ -94,15 +94,16 @@ instance Storable DetectedLines where
     poke = cPoke
     peek = cPeek
 
-foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
-foreign import ccall unsafe "create_texture_fbo" createTextureFBO' :: IO (Ptr TextureFBO)
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> FrameBuffer -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg' :: CString -> IO ()
 foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: IO Double
 foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: IO ()
+foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
+
+foreign import ccall unsafe "create_texture_fbo_c" createTextureFBO' :: IO (Ptr TextureFBO)
 foreign import ccall unsafe "get_scene_fbo_c" getSceneFBO :: IO FrameBuffer
-foreign import ccall unsafe "get_scene_fbo_c" getTargetTexture :: IO Texture
+foreign import ccall unsafe "get_target_texture_c" getTargetTexture :: IO Texture
 
 -- By default Haskell's free uses C's free, but we use C's directly for a guarantee
 foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
