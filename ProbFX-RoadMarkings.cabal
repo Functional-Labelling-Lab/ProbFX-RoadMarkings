@@ -18,6 +18,13 @@ build-type: Custom
 
 extra-source-files:
     backend/src/hough.cpp
+    backend/src/hough.h
+    backend/src/main.cpp
+    backend/src/main.h
+    backend/src/bindings.cpp
+    backend/src/bindings.h
+    backend/src/shaders.cpp
+    backend/src/shaders.h
 
 custom-setup
   setup-depends: base, Cabal, process, directory

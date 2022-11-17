@@ -36,7 +36,53 @@ The long-term goal is to build the pipeline described below...
 ### System Dependencies
 On Ubuntu ensure you have installed the following:
 ```bash
-sudo apt-get install libx11-dev mesa-common-dev libgl1-mesa-dev libglu1-mesa-dev libxinerama1 libxinerama-dev libxcursor-dev libxrandr-dev libxi-dev libxmu-dev libblas-dev
+sudo apt-get install 
+    # required for C++ build
+    make
+    cmake
+    g++ 
+
+    # Required for openCV install
+    wget 
+    unzip 
+
+    # Required for OpenGL
+    libx11-dev 
+    mesa-common-dev 
+    libgl1-mesa-dev 
+    libglu1-mesa-dev 
+    libxinerama1 
+    libxinerama-dev 
+    libxcursor-dev 
+    libxrandr-dev 
+    libxi-dev 
+    libxmu-dev 
+    libblas-dev
+```
+OpenCV is also required for this project ande can be installed with the [following instructions](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html#tutorial_linux_install_detailed_basic_download):
+```bash
+# create a directory to build openCV in:
+mkdir openCV && cd openCV
+
+# Download the required sources:
+wget -O opencv.zip https://github.com/opencv/opencv/archive/4.x.zip
+unzip opencv.zip
+mv opencv-4.x opencv
+
+# create build directory
+mkdir -p build && cd build
+
+# Configure cmake and build
+cmake ../opencv
+make -j4
+
+# install system-wide
+sudo make install
+```
+To complete installation a reboot is required, otherwise you may get a `cannot open shared object file` error ([similar issue](https://stackoverflow.com/questions/12335848/opencv-program-compile-error-libopencv-core-so-2-4-cannot-open-shared-object-f)). On WSL use:
+```powershell
+wsl --shutdown
+# reopen wsl terminal to restart
 ```
 
 ### Build & Clean
