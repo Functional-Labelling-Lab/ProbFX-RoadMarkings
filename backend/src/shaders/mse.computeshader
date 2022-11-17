@@ -16,8 +16,6 @@ void main() {
 
   ivec2 pixel_coords1 = ivec2(x / size.x, x % size.y);
   ivec2 pixel_coords2 = ivec2((x + 1024) / size.x, (x + 1024) % size.y);
-  // ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-
 
   vec4 color1 = imageLoad(img1, pixel_coords1);
   vec4 color2 = imageLoad(img1, pixel_coords2);
@@ -39,28 +37,9 @@ void main() {
     }
 
     barrier();
-  } 
-
-
-  // if (tid < 32) {
-  //   Result[x] += Result[x + 32];
-  //   barrier();
-  //   Result[x] += Result[x + 16];
-  //   barrier();
-  //   Result[x] += Result[x + 8];
-  //   barrier();
-  //   Result[x] += Result[x + 4];
-  //   barrier();
-  //   Result[x] += Result[x + 2];
-  //   barrier();
-  //   Result[x] += Result[x + 1];
-  // }
-
-  // barrier();
+  }
 
   if (tid == 0 && x != 0) {
     atomicAdd(Result[0], Result[x]);
   }
-
-  // Result[0] = 1;
 }

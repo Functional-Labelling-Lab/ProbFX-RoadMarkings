@@ -174,16 +174,14 @@ void init_context()
 	glLinkProgram(mse_program);
 
 	glGenBuffers(1, &context->ssbo);
-	// Bind it to the GL_ARRAY_BUFFER target.
+	// Bind it to the GL_SHADER_STORAGE_BUFFER target.
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
-
-	// Allocate space for it (sizeof(positions) + sizeof(colors)).
 	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
 				sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
 				NULL,                                  // no data
-				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT); // GL_STREAM_READ_ARB, GL_STATIC_READ_ARB, or GL_DYNAMIC_READ_ARB
+				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
 	std::cout << message << std::endl;
@@ -530,8 +528,8 @@ double get_mean_pixel_value(GLuint texture) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
 	// std::clock_t    start;
-
     // start = std::clock();
+
 	// We then run the compute shader
 	glUseProgram(context->computeShader);
 	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
@@ -541,8 +539,6 @@ double get_mean_pixel_value(GLuint texture) {
 	glFinish();
 
 	int mse = *(context->ssbo_map);
-	// glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-	// int mse = 0;
 
 	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
