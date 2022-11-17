@@ -141,10 +141,7 @@ void init_context()
 
 	#ifdef OGL4
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	GLuint ssbo;
-	glGenBuffers(1, &ssbo);
-
-	context->ssbo = ssbo;
+	
 	// Load compute shader into memory	
 	std::string ComputeShaderCode;
 	std::ifstream ComputeShaderStream("./backend/src/shaders/mse.computeshader", std::ios::in);
@@ -168,16 +165,37 @@ void init_context()
 	glAttachShader(mse_program, mse_shader);
 	glLinkProgram(mse_program);
 
-	glGenBuffers(1, &context->ssbo);
-	// Bind it to the GL_SHADER_STORAGE_BUFFER target.
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
 
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
-				sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
-				NULL,                                  // no data
-				GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-	context->ssbo_map = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+	GLuint ssbo_diffs[2];
+	glGenBuffers(2, ssbo_diffs);
+
+	GLuint ssbo_nums[2];
+	glGenBuffers(2, ssbo_nums);
+
+	for (int i=0; i<2; i++) {
+		context->ssbo_diffs[i] = ssbo_diffs[i];
+		// Bind it to the GL_SHADER_STORAGE_BUFFER target.
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_diffs[i]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_diffs[i]);
+
+		glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
+					sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
+					NULL,                                  // no data
+					GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		context->ssbo_diff_maps[i] = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+
+		context->ssbo_nums[i] = ssbo_nums[i];
+		// Bind it to the GL_SHADER_STORAGE_BUFFER target.
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_nums[i]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_nums[i]);
+
+		glBufferStorage(GL_SHADER_STORAGE_BUFFER,                       // target
+					sizeof(int) * SCR_HEIGHT * SCR_WIDTH,    // total size
+					NULL,                                  // no data
+					GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+		context->ssbo_num_maps[i] = (int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(int), GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+	}
+
 
 	std::cout << message << std::endl;
 
@@ -511,7 +529,7 @@ void terminate_context()
 	glDeleteBuffers(1, &context->sceneFBO);
 	glDeleteBuffers(1, &context->diffFBO);
 
-	glDeleteBuffers(1, &context->ssbo);
+	glDeleteBuffers(2, context->ssbo_diffs);
 
 	glfwTerminate();
 }
@@ -522,27 +540,50 @@ double get_mean_pixel_value(GLuint texture) {
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
-
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo);
-
-	// std::clock_t    start;
-    // start = std::clock();
-
-	// We then run the compute shader
+	
+	std::clock_t    start;
+    start = std::clock();
+	
 	glUseProgram(context->computeShader);
-	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
+
+	int targetColor = glGetUniformLocation(context->sceneShader, "targetColor");
+	glm::vec3 targetColors[2];
+	targetColors[0] = glm::vec3(1., 1., 1.);
+	targetColors[1] = glm::vec3(0., 1., 0.);
+	for (int i=0; i<2; i++) {
+
+		// Render ground
+		// Set channel to 1
+		glUniform3f(targetColor, targetColors[i][0], targetColors[i][1], targetColors[i][2]);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_diffs[i]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_diffs[i]);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_nums[i]);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, context->ssbo_nums[i]);
+
+		// We then run the compute shader
+		glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
+	}
 
 
 	// Make sure all buffers have been loaded
 	glFinish();
 
-	int mse = *(context->ssbo_map);
+	int diff_r = *context->ssbo_diff_maps[0];
+	int diff_b = *context->ssbo_diff_maps[1];
+	int num_r = *context->ssbo_num_maps[0];
+	int num_b = *context->ssbo_num_maps[1];
 
-	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+	double normalized_r = static_cast<double>(diff_r) / static_cast<double>(num_r);
+	double normalized_b = static_cast<double>(diff_b) / static_cast<double>(num_b);
 
-	// std::cout << static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
-	return static_cast<double>(mse) / (SCR_WIDTH * SCR_HEIGHT) ;
+	double sum_normalized = normalized_r + normalized_b;	
+
+	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+
+	std::cout << sum_normalized / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
+	return sum_normalized / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
 double get_mean_pixel_value(GLuint texture) {
