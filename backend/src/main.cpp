@@ -51,7 +51,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 		render_scene(&scene, context->sceneFBO);
 
 		// Renders into diffFBO where the texture is in diffTexture
-		find_texture_difference(context->sceneTexture,context->targetTexture);
+		find_texture_difference(context->sceneTexture, context->targetTexture);
 
 		// Render to screen for visual debugging
 		render_to_screen(context->diffTexture);

@@ -36,6 +36,7 @@ import Control.Carrier.ObsReader (runObsReader)
 import Control.Algebra (run, Has)
 import Data.Maybe (fromJust)
 import Text.Read (readMaybe)
+import Control.Monad (join)
 
 --- Probabilistic Model
 
@@ -50,7 +51,6 @@ type RoadEnv =
   , "roll"      := Double
   , "error"     := Double
  ]
-
 emptyRoadEnv :: Env RoadEnv
 emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #yaw := [] <:> #roll := [] <:> #error := repeat 0 <:> nil
 
@@ -87,12 +87,43 @@ envToScene env = run $ runObsReader env $ do
 sceneToEnv :: Scene -> Env RoadEnv
 sceneToEnv = undefined
 
+sceneToVec :: Scene -> [Double]
+sceneToVec scene = zipWith normalise
+    [xRange] --, yRange, zRange, pitchRange, yawRange, rollRange]
+    (map ($ camera scene) [x]) -- , y, z, pitch, yaw, roll])
+
+xRange, yRange, zRange, pitchRange, yawRange, rollRange :: (Double, Double)
+xRange = (-0.4, 0.4)
+yRange = (0.05, 2)
+zRange = (-1, 1)
+pitchRange = (-0.2, 0.2)
+yawRange = (0.2, 0.3)
+rollRange = (0.2, 0.3)
+
+(...) = (.)(.)(.)
+
+euclidian :: Floating a => [a] -> [a] -> a
+euclidian = (sqrt . sum) ... zipWith (join (*) ... subtract)
+
+normalise :: (Double, Double) -> Double -> Double
+-- PRE: lower <= value <= upper
+-- POST: 0 <= normalise (lower, upper) value <= 1
+-- POST: a < b => normalise (l, u) a < normalise (l, u) b
+normalise (lower, upper) value = (value - lower) / (upper - lower)
+
+sceneAccuracy :: Scene -> Scene -> Double
+-- POST: 0 <= sceneAccuracy s s' <= 1
+sceneAccuracy scene scene' = 1 - normalise (0, sqrt n) (euclidian sv (sceneToVec scene'))
+    where
+        n  = fromIntegral $ length sv
+        sv = sceneToVec scene
+
 clamp :: (Double, Double) -> Double -> Double
 clamp (a, b) = min b . max a
 
 initRoadSample :: forall sig m. (Has (Model RoadEnv) sig m) => m Scene
 initRoadSample = do
-    x <- uniform @RoadEnv (-0.4) 0.4 #x
+    x <- uniform @RoadEnv (fst xRange) (snd xRange) #x
     let y = 0.2
     -- y <- uniform @RoadEnv 0.05 2 #y
     let z = 0
@@ -119,7 +150,8 @@ errorFunction scene = unsafePerformIO $ do
     sceneFBO <- getSceneFBO -- returns global sceneFBO
     renderScene scene sceneFBO
 
-    findTextureDifference -- implicitly uses global sceneFBO
+    findTextureDifference -- implicitly uses global sceneTexture
+                          -- and targetTexture
     getMeanPixelValue
 
 testBedExample :: IO Int32
@@ -146,7 +178,7 @@ trainModelFromFile path = do
     targetTexture <- getTargetTexture
     trainModel targetTexture
 
-benchmark :: Int -> IO ()
+benchmark :: Int -> IO Double
 benchmark seed = do
     -- Create a scene to try and run the algorithm on.
     (scene, _) <- sampleIOCustom seed $ simulate emptyRoadEnv initRoadSample
@@ -161,27 +193,30 @@ benchmark seed = do
     --   }
     -- }
 
-    putStrLn "Input Scene:"
-    print scene
-    renderScene scene screenBuffer
+    -- putStrLn "Input Scene:"
+    -- print scene
+    -- renderScene scene screenBuffer
 
     -- Render this scene into an image
     targetTextureFBO <- createTextureFBO
     renderScene scene (frameBuffer targetTextureFBO)
 
     -- Use mh to work backwards to the origional scene
-    putStrLn "Running algorithm on input scene..."
+    putStrLn ("Running algorithm on input seed..." ++ show seed)
     predictedScene <- trainModelSeed seed (texture targetTextureFBO)
 
-    putStrLn "Press any key to see predicted scene"
-    getChar >>= print
-    putStrLn "Predicted Scene:"
-    print predictedScene
-    renderScene predictedScene screenBuffer
-    putStrLn "Press any key to exit"
-    getChar >>= print
+    -- putStrLn "Press any key to see predicted scene"
+    -- getChar >>= print
+    -- putStrLn "Predicted Scene:"
+    -- print predictedScene
+    -- renderScene predictedScene screenBuffer
 
-    return ()
+    let accuracy = sceneAccuracy scene predictedScene
+    putStrLn ("FINAL ACCURACY: " ++ show accuracy)
+
+    -- putStrLn "Press any key to exit"
+    -- getChar >>= print
+    return accuracy
 
     -- return (undefined scene predictedScene)
 
@@ -209,6 +244,8 @@ main = do
             return seed
 
     benchmark seed
+
+    return ()
 
 -- main = dow
 --     let imgHls = getHoughLines "data/road.jpg"
