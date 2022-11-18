@@ -21,13 +21,13 @@ int test_bed_c(double x, double y, double z, double pitch, double yaw, double ro
 	check_context();
 	return test_bed(x,y,z,pitch,yaw,roll);
 }
-double get_mean_pixel_value_c() {
+double get_mean_pixel_value_c(int color) {
 	check_context();
-	return get_mean_pixel_value(context->diffTexture);
+	return get_mean_pixel_value(context->diffTexture, color);
 }
-void find_texture_difference_c() {
+void find_texture_difference_c(int color) {
 	check_context();
-	get_image_mask(context->sceneTexture,context->targetTexture,0);
+	get_image_mask(context->sceneTexture,context->targetTexture,color);
 }
 
 // Hough transform bindings

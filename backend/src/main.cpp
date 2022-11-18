@@ -52,14 +52,18 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 
 		// Renders into diffFBO where the texture is in diffTexture
 		get_image_mask(context->sceneTexture,context->targetTexture,0);
+		double error1 = get_mean_pixel_value(context->diffTexture, 0);
 		get_image_mask(context->sceneTexture,context->targetTexture,1);
+		double error2 = get_mean_pixel_value(context->diffTexture, 1);
+		get_image_mask(context->sceneTexture,context->targetTexture,2);
+		double error3 = get_mean_pixel_value(context->diffTexture, 2);
 
 		// Render to screen for visual debugging
 		render_to_screen(context->diffTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << get_mean_pixel_value(context->diffTexture) << std::endl;
+		std::cout << error1 + error2 + error3 << std::endl;
 
 		// break;
 	}
@@ -198,7 +202,7 @@ void init_context()
 
 
 	std::cout << message << std::endl;
-
+	// exit(1);
 
 	context->computeShader = mse_program;
 	#else
@@ -535,7 +539,7 @@ void terminate_context()
 }
 
 #ifdef OGL4
-double get_mean_pixel_value(GLuint texture) {	
+double get_mean_pixel_value(GLuint texture, int color) {	
 	glFinish();
 	
 	glActiveTexture(GL_TEXTURE0);
@@ -546,44 +550,38 @@ double get_mean_pixel_value(GLuint texture) {
 	
 	glUseProgram(context->computeShader);
 
-	int targetColor = glGetUniformLocation(context->sceneShader, "targetColor");
-	glm::vec3 targetColors[2];
-	targetColors[0] = glm::vec3(1., 1., 1.);
+	int targetColor = glGetUniformLocation(context->computeShader, "targetColor");
+	glm::vec3 targetColors[3];
+	targetColors[0] = glm::vec3(0., 0., 0.);
 	targetColors[1] = glm::vec3(0., 1., 0.);
-	for (int i=0; i<2; i++) {
+	targetColors[2] = glm::vec3(0., 0., 1.);
 
-		// Render ground
-		// Set channel to 1
-		glUniform3f(targetColor, targetColors[i][0], targetColors[i][1], targetColors[i][2]);
+	// Render ground
+	// Set channel to 1
+	glUniform3f(targetColor, targetColors[color][0], targetColors[color][1], targetColors[color][2]);
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_diffs[i]);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_diffs[i]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_diffs[0]);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_diffs[0]);
 
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_nums[i]);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, context->ssbo_nums[i]);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_nums[0]);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, context->ssbo_nums[0]);
 
-		// We then run the compute shader
-		glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
-	}
+	// We then run the compute shader
+	glDispatchCompute((SCR_WIDTH * SCR_HEIGHT) / (1024 * 2), 1, 1);
 
 
 	// Make sure all buffers have been loaded
 	glFinish();
 
 	int diff_r = *context->ssbo_diff_maps[0];
-	int diff_b = *context->ssbo_diff_maps[1];
-	int num_r = *context->ssbo_num_maps[0];
-	int num_b = *context->ssbo_num_maps[1];
+	int num_r = *context->ssbo_num_maps[0] + 1;
 
 	double normalized_r = static_cast<double>(diff_r) / static_cast<double>(num_r);
-	double normalized_b = static_cast<double>(diff_b) / static_cast<double>(num_b);
-
-	double sum_normalized = normalized_r + normalized_b;	
 
 	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-	std::cout << sum_normalized / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
-	return sum_normalized / (SCR_WIDTH * SCR_HEIGHT) ;
+	std::cout << normalized_r / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
+	return normalized_r / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
 double get_mean_pixel_value(GLuint texture) {

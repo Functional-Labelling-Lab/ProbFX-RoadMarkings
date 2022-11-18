@@ -75,8 +75,8 @@ instance Storable DetectedLines where
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
 foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
-foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: IO Double
-foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: IO ()
+foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double
+foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: Int32 -> IO ()
 foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
 
 -- By default Haskell's free uses C's free, but we use C's directly for a guarantee

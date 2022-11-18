@@ -2,15 +2,14 @@
 layout(local_size_x = 1024, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img1;
 layout (binding = 1, std430) buffer OutputBlock { int[] Result; };
-layout (binding = 2, std430) buffer OutputBlock { int[] Counts; };
+layout (binding = 2, std430) buffer CountsBlock { int[] Counts; };
 
 uniform vec3 targetColor;
 
 void main() {
 
   // get index in global work group i.e x,y position
-  int x = int(gl_WorkGroupID.x * (1024 * 2) +
-          gl_LocalInvocationID.x);
+  int x = int(gl_WorkGroupID.x * (1024 * 2) + gl_LocalInvocationID.x);
 
   ivec2 size = ivec2(imageSize(img1));
   int total_size = size.x * size.y;
@@ -21,22 +20,21 @@ void main() {
   vec3 color1 = imageLoad(img1, pixel_coords1).rgb;
   vec3 color2 = imageLoad(img1, pixel_coords2).rgb;
 
-  ivec3 diff1 = ivec3(abs(imageLoad(img1, pixel_coords1) - targetColor) * 255);
-  ivec3 diff2 = ivec3(abs(imageLoad(img1, pixel_coords2) - targetColor) * 255);
-
-  int sum1 = diff1.r + diff1.g + diff1.b;
-  int sum2 = diff2.r + diff2.g + diff2.b;
-
   int tid = int(gl_LocalInvocationIndex.x);
-
-  Result[x] = sum1 + sum2;
+  Result[x] = 0;
   Counts[x] = 0;
   if (color1 != vec3(0,0,0)) {
-    Counts[x] += 1
+    ivec3 diff1 = ivec3(abs(color1 - targetColor) * 255);
+    int sum1 = diff1.r + diff1.g + diff1.b;
+    Result[x] += sum1;
+    Counts[x] += 1;
   }
 
   if (color2 != vec3(0,0,0)) {
-    Counts[x] += 1
+    ivec3 diff2 = ivec3(abs(color2 - targetColor) * 255);
+    int sum2 = diff2.r + diff2.g + diff2.b;
+    Result[x] += sum2;
+    Counts[x] += 1;
   }
 
   barrier();
