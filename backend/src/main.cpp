@@ -340,9 +340,8 @@ void render_scene(struct scene *scene)
 
 	// Bind to framebuffer so images displayed there rather than screen
 	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
-
-	// Clear buffer
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	//Makes the sky blue innit
+	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	// Start using the screenShader shaders and link texture
@@ -584,7 +583,7 @@ double get_mean_pixel_value(GLuint texture, int color) {
 	return normalized_r / (SCR_WIDTH * SCR_HEIGHT) ;
 }
 #else
-double get_mean_pixel_value(GLuint texture) {
+double get_mean_pixel_value(GLuint texture, int color) {
 	// Get average value of the rendered pixels as the value of the deepest mipmap level
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);

@@ -9,19 +9,9 @@ uniform sampler2D myTexture;
 
 void main()
 { 
-	if (channel == 0) {
-		if (texture(mask, TexCoords).x == 1) {
+	if ((channel == 0 && texture(mask, TexCoords).x == 1) || (channel == 1 && (texture(mask, TexCoords).y == 1)) || (channel == 2 && (texture(mask, TexCoords).z == 1))) {
 			FragColor = texture(myTexture, TexCoords);
 		} else {
 			FragColor = vec4(0,0,0,1);
 		}
-	} else if (channel == 1) {
-		if (texture(mask, TexCoords).y == 1) {
-			FragColor = texture(myTexture, TexCoords);
-		} else {
-			FragColor = vec4(0,0,0,1);
-		}
-	} else {
-		FragColor = vec4(0,0,0,1);
-	}
 }
