@@ -68,8 +68,16 @@ errorFunction s = unsafePerformIO $ do
     poke scene s
 
     renderScene scene
-    findTextureDifference
-    realToFrac <$> getMeanPixelValue
+    findTextureDifference 0
+    first_error <- getMeanPixelValue 0
+
+    findTextureDifference 1
+    second_error <- getMeanPixelValue 1
+
+    findTextureDifference 2
+    third_error <- getMeanPixelValue 2
+
+    return (first_error + second_error + third_error)
 
 
 testBedExample :: IO Int32
