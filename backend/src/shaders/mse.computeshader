@@ -24,16 +24,16 @@ void main() {
   Result[x] = 0;
   Counts[x] = 0;
   if (color1 != vec3(0,0,0)) {
-    ivec3 diff1 = ivec3(abs(color1 - targetColor) * 255);
-    int sum1 = diff1.r + diff1.g + diff1.b;
+    vec3 diff1 = pow((color1 - targetColor), vec3(2, 2, 2));
+    int sum1 = int((diff1.r + diff1.g + diff1.b) * 255);
     Result[x] += sum1;
     Counts[x] += 1;
   }
 
   if (color2 != vec3(0,0,0)) {
-    ivec3 diff2 = ivec3(abs(color2 - targetColor) * 255);
-    int sum2 = diff2.r + diff2.g + diff2.b;
-    Result[x] += sum2;
+    vec3 diff2 = pow((color2 - targetColor), vec3(2, 2, 2));
+    int sum2 = int((diff2.r + diff2.g + diff2.b) * 255);
+    Result[x] += sum2 ;
     Counts[x] += 1;
   }
 

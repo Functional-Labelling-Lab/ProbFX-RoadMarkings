@@ -43,27 +43,46 @@ int test_bed(double x, double y, double z, double pitch, double yaw, double roll
 	scene.camera.roll = roll;
 
 	// Seperate Load img function
-	set_target_img("/backend/src/textures/rendered_road.jpg");
+	set_target_img("/backend/src/textures/real_road.jpg");
 
 	while (!glfwWindowShouldClose(context->window))
 	{
+		for (int i=0; i<120; i++) {
+			render_to_screen(context->targetTexture);
+		}
 		// Renders into sceneFBO where the texture is in sceneTexture
 		render_scene(&scene);
 
+		for (int i=0; i<120; i++) {
+			render_to_screen(context->sceneTexture);
+		}
 		// Renders into diffFBO where the texture is in diffTexture
 		get_image_mask(context->sceneTexture,context->targetTexture,0);
 		double error1 = get_mean_pixel_value(context->diffTexture, 0);
+		std::cout << error1 << std::endl;
+		for (int i=0; i<120; i++) {
+			render_to_screen(context->diffTexture);
+		}
 		get_image_mask(context->sceneTexture,context->targetTexture,1);
 		double error2 = get_mean_pixel_value(context->diffTexture, 1);
+		std::cout << error2 << std::endl;
+		for (int i=0; i<120; i++) {
+			render_to_screen(context->diffTexture);
+		}
 		get_image_mask(context->sceneTexture,context->targetTexture,2);
 		double error3 = get_mean_pixel_value(context->diffTexture, 2);
+		std::cout << error3 << std::endl;
+		for (int i=0; i<120; i++) {
+			render_to_screen(context->diffTexture);
+		}
 
 		// Render to screen for visual debugging
-		render_to_screen(context->diffTexture);
 
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
-		std::cout << error1 + error2 + error3 << std::endl;
+		// std::cout << error1 + error2 + error3 << std::endl;
+
+		std::cout << std::endl << std::endl;
 
 		// break;
 	}
@@ -544,16 +563,16 @@ double get_mean_pixel_value(GLuint texture, int color) {
 	glActiveTexture(GL_TEXTURE0);
 	glBindImageTexture(0, context->diffTexture, 0, false, 0, GL_READ_ONLY, GL_RGBA32F);
 	
-	std::clock_t    start;
-    start = std::clock();
+	// std::clock_t    start;
+    // start = std::clock();
 	
 	glUseProgram(context->computeShader);
 
 	int targetColor = glGetUniformLocation(context->computeShader, "targetColor");
 	glm::vec3 targetColors[3];
-	targetColors[0] = glm::vec3(0., 0., 0.);
-	targetColors[1] = glm::vec3(0., 1., 0.);
-	targetColors[2] = glm::vec3(0., 0., 1.);
+	targetColors[0] = glm::vec3(56.5/255., 56.5/255., 56.5/255.);
+	targetColors[1] = glm::vec3(61.6 / 255., 61.6 / 255., 48.2 / 255.);
+	targetColors[2] = glm::vec3(71.8/255., 89.8/255., 99.2/255.0);
 
 	// Render ground
 	// Set channel to 1
@@ -577,10 +596,10 @@ double get_mean_pixel_value(GLuint texture, int color) {
 
 	double normalized_r = static_cast<double>(diff_r) / static_cast<double>(num_r);
 
-	std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
+	// std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << " ms" << std::endl;
 
-	std::cout << normalized_r / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
-	return normalized_r / (SCR_WIDTH * SCR_HEIGHT) ;
+	// std::cout << normalized_r / (SCR_WIDTH * SCR_HEIGHT) << std::endl; 
+	return normalized_r ;
 }
 #else
 double get_mean_pixel_value(GLuint texture, int color) {
