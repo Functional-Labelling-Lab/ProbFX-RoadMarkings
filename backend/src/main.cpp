@@ -360,6 +360,9 @@ void render_scene(struct scene *scene, GLuint FBO)
 	glBindVertexArray(VAOs[1]);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+	// TODO: replace magic number 0 with screen thing
+	if (FBO == 0) glfwSwapBuffers(context->window);
+
 	// Switch to screen output buffer for safety to stop anything else being rendered to the FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

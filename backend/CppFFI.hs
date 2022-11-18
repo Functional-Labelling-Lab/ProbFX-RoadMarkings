@@ -18,7 +18,8 @@ module CppFFI ( Scene(..)
               , getTargetTexture
               , Line
               , Point
-              , getHoughLines) where
+              , getHoughLines
+              , screenBuffer) where
 
 import GHC.Generics (Generic(..))
 import Foreign (Storable(..), Ptr(..))
@@ -70,6 +71,9 @@ instance Storable Scene where
 
 type Point = (Int, Int)
 type Line = (Point, Point)
+
+screenBuffer :: FrameBuffer
+screenBuffer = 0
 
 extractHoughLines :: HoughLine -> Line
 extractHoughLines (HoughLine sx sy ex ey)

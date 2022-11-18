@@ -9,9 +9,9 @@ void check_context(){
 	}	
 }
 
-void render_scene_c(struct scene *scene) {
+void render_scene_c(struct scene *scene, GLuint FBO) {
 	check_context();
-	render_scene(scene, context->sceneFBO);
+	render_scene(scene, FBO);
 }
 void set_target_img_c(const char *str) {
 	check_context();

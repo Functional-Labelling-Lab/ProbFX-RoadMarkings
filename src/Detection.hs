@@ -1,10 +1,8 @@
 --- Language Extensions & Imports
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <$>" #-}
@@ -16,13 +14,11 @@ import Debug.Trace ( trace )
 import System.Environment ( getArgs )
 import Data.Kind (Constraint)
 import Env ( Env, Observables, Assign((:=)), (<:>), nil, get )
-import Control.Algebra (Has)
-
+import System.Random (randomIO)
 import CppFFI (Scene (..), Camera (..), Texture,
                getSceneFBO, renderScene, findTextureDifference,
                getMeanPixelValue, testBed, setTargetImg, createTextureFBO,
-               TextureFBO (frameBuffer, texture), getTargetTexture, getHoughLines)
-
+               TextureFBO (frameBuffer, texture), getTargetTexture, getHoughLines, screenBuffer)
 import Data.List (partition)
 import Foreign.C.String
 import Foreign
@@ -37,8 +33,9 @@ import Inference.SIM (simulate)
 import Inference.MH (mh)
 import Control.Effect.ObsReader (ask)
 import Control.Carrier.ObsReader (runObsReader)
-import Control.Algebra (run)
+import Control.Algebra (run, Has)
 import Data.Maybe (fromJust)
+import Text.Read (readMaybe)
 
 --- Probabilistic Model
 
@@ -61,10 +58,12 @@ emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #yaw := [
 envToScene :: Env RoadEnv -> Maybe Scene
 envToScene env = run $ runObsReader env $ do
     mX <- ask @RoadEnv #x
-    mY <- ask @RoadEnv #y
-    -- let mZ = Just 0
-    mZ <- ask @RoadEnv #z
-    mPitch <- ask @RoadEnv #pitch
+    let mY = Just 0.2
+    -- mY <- ask @RoadEnv #y
+    let mZ = Just 0
+    -- mZ <- ask @RoadEnv #z
+    let mPitch = Just 0
+    -- mPitch <- ask @RoadEnv #pitch
     let mYaw = Just 0
     -- mYaw <- ask @RoadEnv #yaw
     let mRoll = Just 0
@@ -93,10 +92,13 @@ clamp (a, b) = min b . max a
 
 initRoadSample :: forall sig m. (Has (Model RoadEnv) sig m) => m Scene
 initRoadSample = do
-    x <- uniform @RoadEnv (-1) 2 #x
-    y <- uniform @RoadEnv (-1) 2 #y
-    z <- uniform @RoadEnv (-0.01) 0.01 #z
-    pitch <- normal @RoadEnv 0 0.3 #pitch
+    x <- uniform @RoadEnv (-0.4) 0.4 #x
+    let y = 0.2
+    -- y <- uniform @RoadEnv 0.05 2 #y
+    let z = 0
+    -- z <- uniform @RoadEnv (-1) 1 #z
+    let pitch = 0
+    -- pitch <- uniform @RoadEnv (-0.2) 0.2 #pitch
     -- yaw <- normal @env 0.2 0.3 #yaw
     -- roll <- normal @env 0.2 0.3 #roll
 
@@ -148,26 +150,67 @@ benchmark :: Int -> IO ()
 benchmark seed = do
     -- Create a scene to try and run the algorithm on.
     (scene, _) <- sampleIOCustom seed $ simulate emptyRoadEnv initRoadSample
+    -- let scene = Scene {
+    --   camera = Camera { 
+    --     x     = -0.4,
+    --     y     = 0.2,
+    --     z     = 0,
+    --     pitch = 0,
+    --     yaw   = 0,
+    --     roll  = 0
+    --   }
+    -- }
+
+    putStrLn "Input Scene:"
+    print scene
+    renderScene scene screenBuffer
 
     -- Render this scene into an image
     targetTextureFBO <- createTextureFBO
     renderScene scene (frameBuffer targetTextureFBO)
 
     -- Use mh to work backwards to the origional scene
+    putStrLn "Running algorithm on input scene..."
     predictedScene <- trainModelSeed seed (texture targetTextureFBO)
 
-    print scene
+    putStrLn "Press any key to see predicted scene"
+    getChar >>= print
+    putStrLn "Predicted Scene:"
     print predictedScene
-    
+    renderScene predictedScene screenBuffer
+    putStrLn "Press any key to exit"
+    getChar >>= print
+
+    return ()
+
     -- return (undefined scene predictedScene)
 
 -- Scene {camera = Camera {x = 0.6879765442476931, y = 0.10672289591094897, z = 6.263997681267841e-4, pitch = 0.30004201200001984, yaw = 0.0, roll = 0.0}}
--- Scene {camera = Camera {x = 1.9423491560450756e-2, y = 0.13973177834102612, z = 6.743796537081953e-3, pitch = -0.20179312329488874, yaw = 0.0, roll = 0.
+-- Scene {camera = Camera {x = 1.9423491560s450756e-2, y = 0.13973177834102612, z = 6.743796537081953e-3, pitch = -0.20179312329488874, yaw = 0.0, roll = 0.
 
 main :: IO ()
--- main = trainModelFromFile "data/road.jpg" >>= print
-main = benchmark 42
 -- main = do
+--     scene <- trainModelFromFile "data/synthetic.png"
+
+--     print scene
+--     renderScene scene screenBuffer
+--     getChar
+
+--     return ()
+
+main = do
+    args <- getArgs
+
+    seed <- case map readMaybe args of
+        [Just seed] -> return seed
+        _ -> do
+            seed <- randomIO
+            putStrLn ("No seed provided, using seed " ++ show seed)
+            return seed
+
+    benchmark seed
+
+-- main = dow
 --     let imgHls = getHoughLines "data/road.jpg"
 --     let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
 --     print imgHls
