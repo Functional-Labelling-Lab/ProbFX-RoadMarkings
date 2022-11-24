@@ -46,25 +46,25 @@ detected_lines_t *detect_lines(const char *image) {
     // for (size_t i = 0; i < linesP.size(); i++) {
     //   Vec4i l = linesP[i];
     //   line(cdst, Point(l[0], l[1]), Point(l[2], l[3]),
-    //        sufficiently_vertical(l) ? Scalar(0, 255, 0) : Scalar(0, 0, 255), 1,
-    //        LINE_AA);
+    //        sufficiently_vertical(l) ? Scalar(0, 255, 0) : Scalar(0, 0, 255),
+    //        1, LINE_AA);
     // }
 
     std::vector<Vec4i> suff_vert_lines;
-    std::copy_if(linesP.begin(), linesP.end(), std::back_inserter(suff_vert_lines), [](Vec4i v) {
-      return sufficiently_vertical(v);
-    });
+    std::copy_if(linesP.begin(), linesP.end(),
+                 std::back_inserter(suff_vert_lines),
+                 [](Vec4i v) { return sufficiently_vertical(v); });
 
     // Create malloc'd detected_lines struct
     detected_lines_t *new_dls =
-        (detected_lines_t *) malloc(sizeof(detected_lines_t));
+        (detected_lines_t *)malloc(sizeof(detected_lines_t));
     if (new_dls == NULL) {
       exit(EXIT_FAILURE);
     }
 
     new_dls->len = suff_vert_lines.size();
     new_dls->lines =
-        (hough_line_t *) malloc(suff_vert_lines.size() * sizeof(hough_line_t));
+        (hough_line_t *)malloc(suff_vert_lines.size() * sizeof(hough_line_t));
     if (new_dls->lines == NULL) {
       exit(EXIT_FAILURE);
     }

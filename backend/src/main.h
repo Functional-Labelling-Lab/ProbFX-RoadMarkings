@@ -40,17 +40,19 @@ struct sceneVertex
 struct opengl_context
 {
 	GLFWwindow *window;
-	//Shaders
+
+	// Shaders
 	GLuint sceneShader;
 	GLuint diffShader;
 	GLuint outShader;
 	GLuint computeShader;
-	//Textures
+
+	// Textures
 	GLuint grassTexture;
 	GLuint roadTexture;
 	GLuint targetTexture;
 
-	//Vertex Arrays -- Scene vertex arrays are not stored in the context
+	// Vertex Arrays -- Scene vertex arrays are not stored in the context
 	GLuint diffVAO;
 	GLuint diffVBO;
 	GLuint diffEBO;
@@ -58,7 +60,7 @@ struct opengl_context
 	GLuint outVBO;
 	GLuint outEBO;
 
-	//Frame Buffers
+	// Frame Buffers
 	GLuint sceneFBO;
 	GLuint diffFBO;
 
@@ -68,9 +70,10 @@ struct opengl_context
 	GLuint ssbo_nums[2];
 	int* ssbo_num_maps[2];
 
-	//Texture Buffers
+	// Texture Buffers
 	GLuint sceneTexture;
 	GLuint diffTexture;
+	// TODO: Why is this commented out?
 	// GLuint outTexture;
 };
 
