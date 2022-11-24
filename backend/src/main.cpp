@@ -30,6 +30,10 @@ const GLuint SCR_HEIGHT = 1000;
 
 opengl_context *context = NULL;
 
+const char *MSE_COMPUTE_SHADER =
+#include "shaders/mse.computeshader"
+    ;
+
 int test_bed(double x, double y, double z, double pitch, double yaw,
              double roll) {
   struct scene scene;
@@ -161,21 +165,8 @@ void init_context() {
 #ifdef OGL4
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 
-  // Load compute shader into memory
-  std::string ComputeShaderCode;
-  std::ifstream ComputeShaderStream("./backend/src/shaders/mse.computeshader",
-                                    std::ios::in);
-  if (ComputeShaderStream.is_open()) {
-    std::stringstream sstr;
-    sstr << ComputeShaderStream.rdbuf();
-    ComputeShaderCode = sstr.str();
-    ComputeShaderStream.close();
-  }
-
-  // Compile the compute shader
-  char *prog = &ComputeShaderCode[0];
   GLuint mse_shader = glCreateShader(GL_COMPUTE_SHADER);
-  glShaderSource(mse_shader, 1, &prog, NULL);
+  glShaderSource(mse_shader, 1, &MSE_COMPUTE_SHADER, NULL);
   glCompileShader(mse_shader);
   GLsizei log_length = 0;
   GLchar message[1024];
