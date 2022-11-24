@@ -10,7 +10,7 @@ extern "C" {
 void set_target_img(const char* str);
 
 void render_scene(struct scene *scene);
-double get_mean_pixel_value(GLuint texture);
+double get_mean_pixel_value(GLuint texture, int color);
 void get_image_mask(GLuint texture1,GLuint texture2, GLuint channel);
 
 int test_bed(double x, double y, double z, double pitch, double yaw, double roll);
@@ -62,8 +62,11 @@ struct opengl_context
 	GLuint sceneFBO;
 	GLuint diffFBO;
 
-	GLuint ssbo;
-	int* ssbo_map;
+	GLuint ssbo_diffs[2];
+	int* ssbo_diff_maps[2];
+
+	GLuint ssbo_nums[2];
+	int* ssbo_num_maps[2];
 
 	//Texture Buffers
 	GLuint sceneTexture;

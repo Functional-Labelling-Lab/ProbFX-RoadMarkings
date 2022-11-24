@@ -2,14 +2,14 @@
 layout(local_size_x = 1024, local_size_y = 1) in;
 layout(rgba32f, binding = 0) uniform image2D img1;
 layout (binding = 1, std430) buffer OutputBlock { int[] Result; };
+layout (binding = 2, std430) buffer CountsBlock { int[] Counts; };
 
+uniform vec3 targetColor;
 
 void main() {
 
-
   // get index in global work group i.e x,y position
-  int x = int(gl_WorkGroupID.x * (1024 * 2) +
-          gl_LocalInvocationID.x);
+  int x = int(gl_WorkGroupID.x * (1024 * 2) + gl_LocalInvocationID.x);
 
   ivec2 size = ivec2(imageSize(img1));
   int total_size = size.x * size.y;
@@ -17,15 +17,25 @@ void main() {
   ivec2 pixel_coords1 = ivec2(x / size.x, x % size.y);
   ivec2 pixel_coords2 = ivec2((x + 1024) / size.x, (x + 1024) % size.y);
 
-  vec4 color1 = imageLoad(img1, pixel_coords1);
-  vec4 color2 = imageLoad(img1, pixel_coords2);
-
-  int sum1 = int(color1.r * 255.0) + int(color1.g * 255.0) + int(color1.b * 255.0);
-  int sum2 = int(color2.r * 255.0) + int(color2.g * 255.0) + int(color2.b * 255.0);
+  vec3 color1 = imageLoad(img1, pixel_coords1).rgb;
+  vec3 color2 = imageLoad(img1, pixel_coords2).rgb;
 
   int tid = int(gl_LocalInvocationIndex.x);
+  Result[x] = 0;
+  Counts[x] = 0;
+  if (color1 != vec3(0,0,0)) {
+    vec3 diff1 = pow((color1 - targetColor), vec3(2, 2, 2));
+    int sum1 = int((diff1.r + diff1.g + diff1.b) * 255);
+    Result[x] += sum1;
+    Counts[x] += 1;
+  }
 
-  Result[x] = sum1 + sum2;
+  if (color2 != vec3(0,0,0)) {
+    vec3 diff2 = pow((color2 - targetColor), vec3(2, 2, 2));
+    int sum2 = int((diff2.r + diff2.g + diff2.b) * 255);
+    Result[x] += sum2 ;
+    Counts[x] += 1;
+  }
 
   barrier();
 
@@ -34,6 +44,7 @@ void main() {
 
     if (tid < s) {
       Result[x] += Result[limit];
+      Counts[x] += Counts[limit];
     }
 
     barrier();
@@ -41,5 +52,6 @@ void main() {
 
   if (tid == 0 && x != 0) {
     atomicAdd(Result[0], Result[x]);
+    atomicAdd(Counts[0], Counts[x]);
   }
 }
