@@ -1,10 +1,8 @@
 #ifndef SHADERS_H
 #define SHADERS_H
 
-#include <GLFW/glfw3.h>
 #include <glad/glad.h>
-
-#include <string>
+#include <GLFW/glfw3.h>
 
 #ifdef SHADER_CONSTS
 const char *scene_vertex =
