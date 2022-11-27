@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "main.h"
+#include "render.h"
 #include "shaders.h"
 
 enum ShaderType { VERTEX, PROGRAM, FRAGMENT };

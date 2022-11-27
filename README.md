@@ -88,8 +88,10 @@ wsl --shutdown
 ```
 
 ### Build & Clean
+To simplify the build process we use a makefile to invoke cabal
 ```bash
-cabal build
-cabal run
-cabal clean
+make       # same as make build
+make run
+make build
+make clean
 ```

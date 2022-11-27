@@ -10,7 +10,7 @@
 #define SHADER_CONSTS
 #include "shaders.h"
 
-#include "main.h"
+#include "render.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

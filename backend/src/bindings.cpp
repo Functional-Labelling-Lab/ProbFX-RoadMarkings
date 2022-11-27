@@ -1,6 +1,6 @@
 #include "bindings.h"
 #include "hough.h"
-#include "main.h"
+#include "render.h"
 extern opengl_context *context;
 
 void check_context() {
