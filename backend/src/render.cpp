@@ -79,6 +79,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
 
     // Render to screen for visual debugging
 
+    // TODO: Sort this out:
     // Calculate Error
     // uncomment if you wanna be spammed in the terminal
     // std::cout << error1 + error2 + error3 << std::endl;
