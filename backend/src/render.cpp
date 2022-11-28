@@ -34,7 +34,7 @@ const char *MSE_COMPUTE_SHADER =
 #include "shaders/mse.computeshader"
     ;
 
-int test_bed(double x, double y, double z, double pitch, double yaw,
+int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
              double roll) {
   struct scene scene;
   scene.camera.x = x;
@@ -45,7 +45,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
   scene.camera.roll = roll;
 
   // Seperate Load img function
-  set_target_img("/backend/src/textures/real_road.jpg");
+  set_target_img(str);
 
   while (!glfwWindowShouldClose(context->window)) {
     for (int i = 0; i < 120; i++) {

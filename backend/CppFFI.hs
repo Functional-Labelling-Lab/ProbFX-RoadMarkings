@@ -5,20 +5,19 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 
 module CppFFI (
-    Scene(..), 
-    Camera(..), 
-    renderScene, 
-    setTargetImg, 
-    testBed, 
+    Scene(..),
+    Camera(..),
+    renderScene,
+    setTargetImg,
+    testBed,
     getMeanPixelValue,
-    findTextureDifference, 
+    findTextureDifference,
     getHoughLines,
-    Point, 
+    Point,
     Line
   ) where
 
 import           Foreign
-import           Foreign           (Ptr (..), Storable (..))
 import           Foreign.C.String
 import           Foreign.C.Types   (CChar, CInt)
 import           Foreign.CStorable (CStorable (..))
@@ -82,7 +81,7 @@ instance Storable DetectedLines where
   peek = cPeek
 
 -- Test bed for demoing pipeline
-foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
+foreign import ccall unsafe "test_bed_c" testBed :: CString -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 
 -- Backing calls for 
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()

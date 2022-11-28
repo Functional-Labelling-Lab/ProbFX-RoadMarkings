@@ -82,8 +82,8 @@ channelError s = unsafePerformIO $ do
 
 trainModel :: String -> ErrorFunction -> IO ()
 trainModel imagePath errFun = do
-  string <- newCString imagePath
-  setTargetImg string
+  imgPath <- newCString imagePath
+  setTargetImg imgPath
 
   sampleIO $ do
     let mh_env :: Env RoadEnv
@@ -115,17 +115,18 @@ trainModel imagePath errFun = do
     disp pitches
     disp zs
     disp yaws
-    disp rolls
-    
-    liftS $ print =<< testBed (head xs) (head ys) (head zs) (head pitches) 0.0 (head rolls)
+    disp rolls    
+    liftS $ print =<< testBed imgPath (head xs) (head ys) (head zs) (head pitches) 0.0 (head rolls)
     disp errors
     liftS $ print $ length xs
     liftS $ print (fromIntegral (length xs) / 100.0)
   where
     disp = liftS . print . take 10
 
-testBedExample :: IO Int32
-testBedExample = testBed 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
 
 main :: IO ()
-main = trainModel "backend/src/textures/real_road.jpg" channelError
+-- main = trainModel "data/read_road.jpg" channelError
+main = do
+  imgPath <- newCString "data/real_road.jpg"
+  testBed imgPath 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
+  return ()
