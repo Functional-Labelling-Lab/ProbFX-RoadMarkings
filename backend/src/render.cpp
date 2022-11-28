@@ -304,7 +304,7 @@ sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
   return vertex;
 }
 
-void render_scene(struct scene *scene) {
+void render_scene(struct scene *scene, GLuint FBO) {
   float planeSize = 100.0f;
 
   // This is done here because it depends on the scene
@@ -351,7 +351,7 @@ void render_scene(struct scene *scene) {
   int modelLoc, viewLoc, projectionLoc, channelLoc;
 
   // Bind to framebuffer so images displayed there rather than screen
-  glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
+  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
   // Makes the sky blue innit
   glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
@@ -403,6 +403,9 @@ void render_scene(struct scene *scene) {
   glUniform1i(channelLoc, 0);
   glBindVertexArray(VAOs[1]);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	// TODO: replace magic number 0 with screen thing
+	if (FBO == 0) glfwSwapBuffers(context->window);
 
   // Switch to screen output buffer for safety to stop anything else being
   // rendered to the FBO
@@ -723,3 +726,33 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
   std::cout << std::endl;
   std::cout << std::endl;
 }
+
+/* Creates a buffer and a texture,
+   binds the texture to the buffer,
+	 returns both. */
+struct texture_fbo *create_texture_fbo() {
+	struct texture_fbo *tfbo = (struct texture_fbo *) malloc(sizeof(struct texture_fbo));
+	if (tfbo == NULL) {
+		exit(EXIT_FAILURE);
+	}
+	
+	/* Create the buffers */
+	glGenBuffers(1, &tfbo->frameBuffer);
+	glGenTextures(1, &tfbo->texture);
+
+	/* Bind texture to buffer */
+	bind_frame_buffer(tfbo->frameBuffer, tfbo->frameBuffer);
+
+	return tfbo;
+}
+
+/* Returns the scene frame buffer stored in the global context */
+GLuint get_scene_fbo() {
+	return context->sceneFBO;
+}
+
+/* Returns the scene texture stored in the global context */
+GLuint get_target_texture() {
+	return context->sceneTexture;
+}
+

@@ -2,19 +2,36 @@
 {-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module CppFFI (Scene(..), Camera(..), renderScene, 
-                setTargetImg, testBed, getMeanPixelValue,
-                findTextureDifference, getHoughLines,
-                Point, Line
-                ) where
+module CppFFI ( Scene(..)
+              , Camera(..)
+              , renderScene
+              , setTargetImg
+              , testBed
+              , getMeanPixelValue
+              , findTextureDifference
+              , createTextureFBO
+              , TextureFBO(..)
+              , GLuint
+              , Texture
+              , FrameBuffer
+              , getSceneFBO
+              , getTargetTexture
+              , Line
+              , Point
+              , getHoughLines
+              , screenBuffer) where
 
-import           Foreign
-import           Foreign           (Ptr (..), Storable (..))
-import           Foreign.C.String
-import           Foreign.C.Types   (CChar, CInt)
-import           Foreign.CStorable (CStorable (..))
-import           GHC.Generics      (Generic (..))
-import           GHC.IO            (unsafePerformIO)
+import GHC.Generics (Generic(..))
+import Foreign (Storable(..), Ptr(..))
+import Foreign.CStorable (CStorable(..))
+import Foreign.C.Types (CChar, CInt(..), CUInt(..))
+import Foreign.C.String
+import Foreign
+import System.IO.Unsafe (unsafePerformIO)
+
+type GLuint = CUInt
+type Texture = GLuint
+type FrameBuffer = GLuint
 
 data Camera = Camera
     { x     :: Double
@@ -24,6 +41,17 @@ data Camera = Camera
     , yaw   :: Double
     , roll  :: Double
     } deriving (Generic, CStorable, Show)
+
+data TextureFBO = TextureFBO
+    { texture :: Texture
+    , frameBuffer :: FrameBuffer
+    } deriving (Generic, CStorable, Show)
+
+instance Storable TextureFBO where
+    sizeOf = cSizeOf
+    alignment = cAlignment
+    poke = cPoke
+    peek = cPeek
 
 instance Storable Camera where
     peek      = cPeek
@@ -43,6 +71,9 @@ instance Storable Scene where
 
 type Point = (Int, Int)
 type Line = (Point, Point)
+
+screenBuffer :: FrameBuffer
+screenBuffer = 0
 
 extractHoughLines :: HoughLine -> Line
 extractHoughLines (HoughLine sx sy ex ey)
@@ -72,12 +103,16 @@ instance Storable DetectedLines where
     poke = cPoke
     peek = cPeek
 
-foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
-foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
+foreign import ccall unsafe "render_scene_c" renderScene' :: Ptr Scene -> FrameBuffer -> IO ()
+foreign import ccall unsafe "set_target_img_c" setTargetImg' :: CString -> IO ()
 foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double
 foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: Int32 -> IO ()
 foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
+
+foreign import ccall unsafe "create_texture_fbo_c" createTextureFBO' :: IO (Ptr TextureFBO)
+foreign import ccall unsafe "get_scene_fbo_c" getSceneFBO :: IO FrameBuffer
+foreign import ccall unsafe "get_target_texture_c" getTargetTexture :: IO Texture
 
 -- By default Haskell's free uses C's free, but we use C's directly for a guarantee
 foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
@@ -99,3 +134,16 @@ getHoughLines path = unsafePerformIO $ withCString path (\c_path ->
 
         return lines
     )
+
+-- sets context->targetTexture to image in path
+setTargetImg :: String -> IO ()
+setTargetImg s = newCString s >>= setTargetImg'
+
+createTextureFBO :: IO TextureFBO
+createTextureFBO = createTextureFBO' >>= peek
+
+renderScene :: Scene -> FrameBuffer -> IO ()
+renderScene scene fbo = do
+    s <- malloc
+    poke s scene
+    renderScene' s fbo
