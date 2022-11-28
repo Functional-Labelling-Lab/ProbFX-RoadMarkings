@@ -1,0 +1,6 @@
+// Helpful settings for VSCode users
+
+// The CMake file creates compiler_commands.json, which clang-tidy (and its vscode plugin) can read.
+{
+    "clang-tidy.buildPath":"backend/build"
+}
