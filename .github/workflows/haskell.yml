@@ -66,6 +66,6 @@ jobs:
         # List of packages to install
         apt_packages: liblapack-dev
         # CMake command to run in order to generate compile_commands.json
-        cmake_command: make
+        cmake_command: echo "no build"
         build_dir: backend/build
   
