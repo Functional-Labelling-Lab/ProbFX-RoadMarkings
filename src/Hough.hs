@@ -46,6 +46,7 @@ compareLines ls rs (h,w)
       | dx >= 0 && dy  > 0 = (1, -dx,  dy)
       | dx  < 0 && dy >= 0 = (2, -dx, -dy)
       | dx  < 0 && dy  < 0 = (3,  dx, -dy)
+      | otherwise          = error "unreachable"
       where
         (dx', dy') = (cx - fromIntegral x, cy - fromIntegral y)
         norm = sqrt (dx'^2 + dy'^2)
