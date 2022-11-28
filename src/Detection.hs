@@ -66,20 +66,6 @@ roadGenerationModel errFun = do
   error <- normal @env (errFun roadSample) 50 #error
   return ()
 
-channelError :: ErrorFunction
-channelError s = unsafePerformIO $ do
-  scene <- malloc
-  poke scene s
-  renderScene scene
-  findTextureDifference 0
-  first_error <- getMeanPixelValue 0
-  findTextureDifference 1
-  second_error <- getMeanPixelValue 1
-  findTextureDifference 2
-  third_error <- getMeanPixelValue 2
-  print (first_error + second_error + third_error)
-  return (first_error + second_error + third_error)
-
 trainModel :: String -> ErrorFunction -> IO ()
 trainModel imagePath errFun = do
   imgPath <- newCString imagePath
@@ -130,3 +116,17 @@ main = do
   imgPath <- newCString "data/real_road.jpg"
   testBed imgPath 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
   return ()
+
+channelError :: ErrorFunction
+channelError s = unsafePerformIO $ do
+  scene <- malloc
+  poke scene s
+  renderScene scene
+  findTextureDifference 0
+  first_error <- getMeanPixelValue 0
+  findTextureDifference 1
+  second_error <- getMeanPixelValue 1
+  findTextureDifference 2
+  third_error <- getMeanPixelValue 2
+  print (first_error + second_error + third_error)
+  return (first_error + second_error + third_error)

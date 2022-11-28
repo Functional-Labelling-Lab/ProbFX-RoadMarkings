@@ -83,7 +83,7 @@ instance Storable DetectedLines where
 -- Test bed for demoing pipeline
 foreign import ccall unsafe "test_bed_c" testBed :: CString -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 
--- Backing calls for 
+-- Backing calls for error functions
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double
@@ -94,11 +94,11 @@ foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr 
 foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
 
 getHoughLines :: String -> [Line]
-getHoughLines path = unsafePerformIO $ withCString path (\c_path ->
+getHoughLines path = unsafePerformIO $ withCString path $ \c_path ->
   do
     -- Access the detected_lines struct and pointer
     rawPtr <- rawHoughLines c_path
-    raw <- peek rawPtr
+    raw    <- peek rawPtr
 
     -- Read the array of hough_lines structs and extract
     houghLines <- peekArray (fromIntegral $ len raw) (hlines raw)
@@ -109,4 +109,3 @@ getHoughLines path = unsafePerformIO $ withCString path (\c_path ->
     c_free rawPtr
 
     return lines
-  )

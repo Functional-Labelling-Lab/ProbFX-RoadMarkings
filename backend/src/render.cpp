@@ -214,12 +214,14 @@ void init_context() {
   }
 
   std::cout << message << std::endl;
+  // TODO:
   // exit(1);
 
   context->computeShader = mse_program;
 #else
 #endif
 
+  // TODO:
   // uncomment this call to draw in wireframe polygons.
   // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 }
@@ -360,6 +362,7 @@ void render_scene(struct scene *scene) {
   glUseProgram(context->sceneShader);
   glUniform1i(glGetUniformLocation(context->sceneShader, "ourTexture"), 0);
 
+  // TODO:
   // Model Tranformations -- None atm so commented out
   model = glm::mat4(1.0f);
   // model = glm::rotate(model, glm::radians(90.0f * (float)
@@ -597,6 +600,7 @@ double get_mean_pixel_value(GLuint texture, int color) {
   double normalized_r =
       static_cast<double>(diff_r) / static_cast<double>(num_r);
 
+  // TODO:
   // std::cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC /
   // 1000) << " ms" << std::endl;
 
