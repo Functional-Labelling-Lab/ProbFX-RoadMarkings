@@ -52,7 +52,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
       render_to_screen(context->targetTexture);
     }
     // Renders into sceneFBO where the texture is in sceneTexture
-    render_scene(&scene);
+    render_scene(&scene, context->sceneFBO);
 
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->sceneTexture);
