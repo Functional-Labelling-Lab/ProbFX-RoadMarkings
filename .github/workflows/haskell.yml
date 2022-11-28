@@ -58,14 +58,3 @@ jobs:
 
     - name: Run tests
       run: cabal test all
-
-    - name: Clang-Tidy
-      uses: ZedThree/clang-tidy-review@v0.10.0
-      id: review
-      with:
-        # List of packages to install
-        apt_packages: liblapack-dev
-        # CMake command to run in order to generate compile_commands.json
-        cmake_command: echo "no build"
-        build_dir: backend/build
-  
