@@ -22,6 +22,9 @@ The long-term goal is to build the pipeline described below...
 |
 ├── data ───── ... # Data used for testing (i.e images)
 |
+├── .vscode
+|    └── settings.json  # Helpful vscode configuration (e.g for clang tidy extension)
+|
 ├── backend ── ... # The C++ side of the project
 ├── app ────── ... # The main 
 └── src ────── ... # The Haskell side of the project (contains bindings, logic)
