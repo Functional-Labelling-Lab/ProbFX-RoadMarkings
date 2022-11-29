@@ -14,10 +14,10 @@ The makefile contained is called by cabal when building the Haskell project to g
 ├── README.md       # This readme
 └── src  # Contains all C++ source code
     ├── bindings.cpp/h
-    ├── main.cpp/h
-    ├── shaders.cpp/h
-    ├── shaders ─── ...
-    └── textures ── ...
+    ├── render.cpp/h    # rendering (synthetic, and for display)
+    ├── shaders.cpp/h   # shader utilities and includes from shaders/
+    ├── shaders ─── ... # glsl shaders source
+    └── images ──── ... # images used for textures
 ```
 
 ### Develop

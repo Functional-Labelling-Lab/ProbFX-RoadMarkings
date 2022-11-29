@@ -22,6 +22,9 @@ The long-term goal is to build the pipeline described below...
 |
 ├── data ───── ... # Data used for testing (i.e images)
 |
+├── .vscode
+|    └── settings.json  # Helpful vscode configuration (e.g for clang tidy extension)
+|
 ├── backend ── ... # The C++ side of the project
 ├── app ────── ... # The main 
 └── src ────── ... # The Haskell side of the project (contains bindings, logic)
@@ -88,8 +91,10 @@ wsl --shutdown
 ```
 
 ### Build & Clean
+To simplify the build process we use a makefile to invoke cabal
 ```bash
-cabal build
-cabal run
-cabal clean
+make       # same as make build
+make run
+make build
+make clean
 ```

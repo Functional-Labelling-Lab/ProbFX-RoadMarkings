@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 include(FetchContent)
 
+# used by clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(RoadMarkingsBackend)
 
 # Coloured output (without using WARNING)
@@ -35,8 +38,8 @@ else()
 endif()
 message(STATUS "${Green} To change OpenGL version, change the OGL4 variable in backend/CMakeLists.txt ${ColourReset}")
 
-add_library(${PROJECT_NAME} STATIC src/main.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
-# add_executable(${PROJECT_NAME} src/main.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
+add_library(${PROJECT_NAME} STATIC src/render.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
+# add_executable(${PROJECT_NAME} src/render.cpp src/shaders.cpp src/bindings.cpp src/hough.cpp)
 
 # OpenGL is required, including for glfw
 find_package( OpenGL REQUIRED )

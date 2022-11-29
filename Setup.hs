@@ -6,6 +6,9 @@ import Distribution.Simple.Setup
 import System.Process
 import System.Directory
 
+redCol = "\ESC[31m"
+resetCol = "\ESC[0m"
+
 main :: IO ()
 main =
   defaultMainWithHooks
@@ -17,16 +20,16 @@ main =
 
 buildBackendPreConf :: Args -> ConfigFlags -> IO HookedBuildInfo
 buildBackendPreConf _ _ = do
-  putStrLn "\n>> Running Pre-Configure Hook  <<\n"
+  putStrLn $ redCol ++ ">> Running Pre-Configure Hook  <<" ++ resetCol
   readProcess "make" ["--directory=backend"] "" >>= putStrLn
-  putStrLn ">> Pre-Configure Hook Complete <<\n"
+  putStrLn $ redCol ++ ">> Pre-Configure Hook Complete <<" ++ resetCol
   return emptyHookedBuildInfo
 
 buildBackendPreBuild :: Args -> BuildFlags -> IO HookedBuildInfo
 buildBackendPreBuild _ _ = do
-  putStrLn "\n>> Running Pre-Build Hook  <<\n"
+  putStrLn $ redCol ++ ">> Running Pre-Build Hook  <<" ++ resetCol
   readProcess "make" ["--directory=backend"] "" >>= putStrLn
-  putStrLn ">> Pre-Build Hook Complete <<\n"
+  putStrLn $ redCol ++ ">> Pre-Build Hook Complete <<" ++ resetCol
   return emptyHookedBuildInfo
 
 addExtraLibs ::
