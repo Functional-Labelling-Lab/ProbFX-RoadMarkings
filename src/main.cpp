@@ -274,24 +274,33 @@ void set_target_img(const char *str)
 	context->targetTexture = load_texture(str);
 }
 
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z)
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	sceneVertex vertex;
 	vertex.x = x;
 	vertex.y = y;
 	vertex.z = z;
+	vertex.w = w; 
 	return vertex;
+}
+
+GLfloat clip(GLfloat val, GLfloat w) {
+	return -1;
 }
 
 // Converts vertex to coords we can use in the error function
 sceneVertex get_vertex_in_clip_space(sceneVertex vertex, glm::mat4 projection, glm::mat4 view, glm::mat4 model)
 {
-	glm::vec4 vertexVector = glm::vec4(vertex.x, vertex.y, vertex.z, 1.0);
+	glm::vec4 vertexVector = glm::vec4(vertex.x, vertex.y, vertex.z, vertex.w);
 	glm::vec4 clipVertexVector = projection * view * model * vertexVector;
-	// clipVertexVector = clipVertexVector/clipVertexVector.w;
 
-	std::cout << glm::to_string(clipVertexVector) << std::endl;
-	return create_vertex(clipVertexVector.x, clipVertexVector.y, clipVertexVector.z);
+	//Clipping
+	clipVertexVector =  glm::vec4(clipVertexVector.x,clipVertexVector.y,clipVertexVector.z,clipVertexVector.w);
+
+	//std::cout << glm::to_string(projection) << std::endl;
+	std::cout << glm::to_string(clipVertexVector/clipVertexVector.w) << " <-- " << glm::to_string(clipVertexVector) << std::endl;
+	//return create_vertex(vertexVector.x, vertexVector.y, vertexVector.z,vertexVector.w);
+	return create_vertex(clipVertexVector.x, clipVertexVector.y, clipVertexVector.z, clipVertexVector.w);
 }
 
 void render_scene(struct scene *scene)
@@ -322,10 +331,10 @@ void render_scene(struct scene *scene)
 	// This is done here because it depends on the scene
 	sceneVertex ground_vertices[] = {
 			// positions
-			create_vertex(planeSize, 0.0f, planeSize),	 // top right
-			create_vertex(planeSize, 0.0f, -planeSize),	 // bottom right
-			create_vertex(-planeSize, 0.0f, -planeSize), // bottom left
-			create_vertex(-planeSize, 0.0f, planeSize)	 // top left
+			create_vertex(planeSize, 0.0f, planeSize,1),	 // top right
+			create_vertex(planeSize, 0.0f, -planeSize,1),	 // bottom right
+			create_vertex(-planeSize, 0.0f, -planeSize,1), // bottom left
+			create_vertex(-planeSize, 0.0f, planeSize,1)	 // top left
 	};
 
 	GLuint ground_indices[] = {
@@ -343,25 +352,35 @@ void render_scene(struct scene *scene)
 	// 		create_vertex(-0.5f, 0.5f, 0.0f)   // top left
 	// };
 
-	sceneVertex road_vertices[] = {
-			// positions
-			create_vertex(roadWidth, 0.0f, planeSize),   // top right
-			create_vertex(roadWidth, 0.0f, -planeSize),	 // bottom right
-			create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
-			create_vertex(-roadWidth, 0.0f, planeSize)   // top left
-	};
+	// sceneVertex road_vertices[] = {
+	// 		// positions
+	// 		create_vertex(roadWidth, 0.0f, planeSize),   // top right
+	// 		create_vertex(roadWidth, 0.0f, -planeSize),	 // bottom right
+	// 		create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
+	// 		create_vertex(-roadWidth, 0.0f, planeSize)   // top left
+	// };
 
 	// sceneVertex road_vertices[] = {
 	// 		// positions
-	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, planeSize), projection, view, model),		// top right
-	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, -planeSize), projection, view, model),	// bottom right
-	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, -planeSize), projection, view, model), // bottom left
-	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, planeSize), projection, view, model)		// top left
+	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, planeSize,1), projection, view, model),		// top right
+	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, -planeSize,1), projection, view, model),	// bottom right
+	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, -planeSize,1), projection, view, model), // bottom left
+	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, planeSize,1), projection, view, model)		// top left
 	// };
+
+	sceneVertex road_vertices[] = {
+			// positions
+			create_vertex(0.362132, -38.243519, -99.135422, -98.737549),   // top right 0
+			create_vertex(0.362132, 37.289722, 98.797714, 98.800125),	 // bottom right 	1
+			create_vertex(-0.362132, 37.289722, 98.797714, 98.800125), // bottom left 	2
+			create_vertex(-0.362132, -38.243519, -99.135422, -98.737549)   // top left 	3
+	};
+
+
 
 	GLuint road_indices[] = {
 			0, 1, 3, // first trianglebind_diff_vertex_atts
-			1, 2, 3	 // second triangle
+			// 1, 2, 3	 // second triangle
 	};
 
 	GLuint VAOs[2], VBOs[2], EBOs[2];
@@ -492,7 +511,7 @@ void bind_texture(GLuint *texture, char *location)
 
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length)
 {
-	int total_size = 3 * sizeof(GLfloat); // + sizeof(GLuint);
+	int total_size = 4 * sizeof(GLfloat); // + sizeof(GLuint);
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -502,7 +521,7 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *ver
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_length, indices, GL_STATIC_DRAW);
 
 	// Position 3D
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, total_size, (void *)0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, total_size, (void *)0);
 	glEnableVertexAttribArray(0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

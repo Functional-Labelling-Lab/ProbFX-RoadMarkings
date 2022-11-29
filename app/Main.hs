@@ -69,7 +69,7 @@ errorFunction s = unsafePerformIO $ do
 
 
 testBedExample :: IO Int32
-testBedExample = testBed 0.2 0.2 0 (-0.0) 0 0
+testBedExample = testBed 0 0.2 0 (-0.1) 0 0
 
 --- Run training loop
 trainModel :: IO ()

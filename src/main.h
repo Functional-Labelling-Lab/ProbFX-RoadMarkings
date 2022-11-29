@@ -34,6 +34,7 @@ struct sceneVertex
 	GLfloat x;
 	GLfloat y;
 	GLfloat z;
+	GLfloat w; 
 };
 
 struct opengl_context
@@ -71,7 +72,7 @@ struct opengl_context
 };
 
 void init_context();
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z);
+sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z,  GLfloat w);
 GLFWwindow *init_gl_and_get_window();
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, sceneVertex *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices, GLuint vertices_length, GLuint *indices, GLuint indices_length);
