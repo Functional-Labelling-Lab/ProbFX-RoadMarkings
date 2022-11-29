@@ -9,7 +9,7 @@
 
 #define SHADER_CONSTS
 #include "shaders.h"
-
+#include "hough.h"
 #include "render.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -306,6 +306,60 @@ sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
   return vertex;
 }
 
+void generate_rendering_matrices(glm::mat4* model, glm::mat4* view, glm::mat4* projection, struct scene *scene){
+	glm::vec3 cameraPos, cameraTarget;
+	  // TODO:
+  // Model Tranformations -- None atm so commented out
+  *model = glm::mat4(1.0f);
+  // model = glm::rotate(model, glm::radians(90.0f * (float)
+  // scene->camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
+
+  // View Transformation -- Calculated by picking a position and a point to look
+  // at
+  cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
+
+  cameraTarget =
+      glm::vec3(-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
+                scene->camera.y + sin((M_PI / 2) * scene->camera.pitch *
+                                      cos((M_PI / 2) * scene->camera.yaw)),
+                scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
+  *view = glm::lookAt(cameraPos, cameraTarget,
+                     glm::vec3(sin((M_PI / 2) * scene->camera.roll),
+                               cos((M_PI / 2) * scene->camera.roll), 0.0));
+
+  // Projection -- Sets perspective (FOV 45 degrees and in perspective
+  // projection)
+  *projection = glm::perspective(
+      glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	return;
+}
+
+
+struct detected_lines *get_scene_geometry(struct scene *scene){
+	glm::mat4 model, view, projection;
+	generate_rendering_matrices(&model, &view, &projection, scene);
+	
+	glm::mat4 combMatrix = projection * view * model; 
+
+	//Needs to be refactored so generated the same way as render_scene
+	float roadWidth = 0.15;
+	float planeSize = 100.0f;
+  glm::vec4 road_vertices[] = {
+      // positions
+      glm::vec4(roadWidth, 0.0f, planeSize,1),   // top right
+      glm::vec4(roadWidth, 0.0f, -planeSize,1),  // bottom right
+      glm::vec4(-roadWidth, 0.0f, -planeSize,1), // bottom left
+      glm::vec4(-roadWidth, 0.0f, planeSize,1)   // top left
+  };
+
+	//Magic to turn screen space coordinates
+	//....
+
+	// struct detect_lines* lines = (detect_lines*) malloc(sizeof(detected_lines_t));
+	// // lines->len = 2; 
+	
+}
+
 void render_scene(struct scene *scene) {
   float planeSize = 100.0f;
 
@@ -348,8 +402,8 @@ void render_scene(struct scene *scene) {
                          sizeof(road_vertices), road_indices,
                          sizeof(road_indices));
 
-  glm::mat4 model, view, projection;
-  glm::vec3 cameraPos, cameraTarget;
+
+
   int modelLoc, viewLoc, projectionLoc, channelLoc;
 
   // Bind to framebuffer so images displayed there rather than screen
@@ -362,29 +416,8 @@ void render_scene(struct scene *scene) {
   glUseProgram(context->sceneShader);
   glUniform1i(glGetUniformLocation(context->sceneShader, "ourTexture"), 0);
 
-  // TODO:
-  // Model Tranformations -- None atm so commented out
-  model = glm::mat4(1.0f);
-  // model = glm::rotate(model, glm::radians(90.0f * (float)
-  // scene->camera.roll), glm::vec3(0.0f, 0.0f, 1.0f));
-
-  // View Transformation -- Calculated by picking a position and a point to look
-  // at
-  cameraPos = glm::vec3(-scene->camera.x, scene->camera.y, scene->camera.z);
-
-  cameraTarget =
-      glm::vec3(-scene->camera.x + sin((M_PI / 2) * scene->camera.yaw),
-                scene->camera.y + sin((M_PI / 2) * scene->camera.pitch *
-                                      cos((M_PI / 2) * scene->camera.yaw)),
-                scene->camera.z - cos((M_PI / 2) * scene->camera.pitch));
-  view = glm::lookAt(cameraPos, cameraTarget,
-                     glm::vec3(sin((M_PI / 2) * scene->camera.roll),
-                               cos((M_PI / 2) * scene->camera.roll), 0.0));
-
-  // Projection -- Sets perspective (FOV 45 degrees and in perspective
-  // projection)
-  projection = glm::perspective(
-      glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+  glm::mat4 model, view, projection;
+	generate_rendering_matrices(&model, &view, &projection, scene);
 
   // Links up Model, View and Projection matrix with shaders
   modelLoc = glGetUniformLocation(context->sceneShader, "model");
