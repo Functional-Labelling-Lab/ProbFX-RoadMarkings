@@ -9,12 +9,6 @@ uniform mat4 projection;
 
 void main()
 {
-	vec4 vert = vec4(aPos);
-	float x = vert.x;
-	float y = vert.y;
-	float z = vert.y;
-	float w = vert.w;
-	float div = abs(w);
-	gl_Position = vec4(x,y,z,w);
+	gl_Position = vec4(aPos);
 	ourColor = vec3(0,0.1,0);
 }

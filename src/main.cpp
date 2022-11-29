@@ -370,16 +370,20 @@ void render_scene(struct scene *scene)
 
 	sceneVertex road_vertices[] = {
 			// positions
-			create_vertex(0.362132, -38.243519, -99.135422, -98.737549),   // top right 0
-			create_vertex(0.362132, 37.289722, 98.797714, 98.800125),	 // bottom right 	1
-			create_vertex(-0.362132, 37.289722, 98.797714, 98.800125), // bottom left 	2
-			create_vertex(-0.362132, -38.243519, -99.135422, -98.737549)   // top left 	3
+			create_vertex(0.003668, -0.387325, -1.004030, -1.000000),   // top right 0
+			create_vertex(0.003665, 0.377426, 0.999976, 1.000000),	 // bottom right 	1
+			create_vertex(-0.003665, 0.377426, 0.999976, 1.000000), // bottom left 	2
+			create_vertex(-0.003668, -0.387325, -1.004030, -1.000000)   // top left 	3
 	};
 
+// vec4(-0.003668, 0.387325, 1.004030, 1.000000) <-- vec4(0.362132, -38.243519, -99.135422, -98.737549)
+// vec4(0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(0.362132, 37.289722, 98.797714, 98.800125)
+// vec4(-0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(-0.362132, 37.289722, 98.797714, 98.800125)
+// vec4(0.003668, 0.387325, 1.004030, 1.000000) <-- vec4(-0.362132, -38.243519, -99.135422, -98.737549)
 
 
 	GLuint road_indices[] = {
-			0, 1, 3, // first trianglebind_diff_vertex_atts
+			0, 1, 2, // first trianglebind_diff_vertex_atts
 			// 1, 2, 3	 // second triangle
 	};
 
