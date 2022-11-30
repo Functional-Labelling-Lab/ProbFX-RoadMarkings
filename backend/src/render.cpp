@@ -298,14 +298,6 @@ void set_target_img(const char *str) {
   context->targetTexture = load_texture(str);
 }
 
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
-  sceneVertex vertex;
-  vertex.x = x;
-  vertex.y = y;
-  vertex.z = z;
-  return vertex;
-}
-
 void generate_rendering_matrices(glm::mat4* model, glm::mat4* view, glm::mat4* projection, struct scene *scene){
 	glm::vec3 cameraPos, cameraTarget;
 	  // TODO:
@@ -364,12 +356,12 @@ void render_scene(struct scene *scene) {
   float planeSize = 100.0f;
 
   // This is done here because it depends on the scene
-  sceneVertex ground_vertices[] = {
+  glm::vec4 ground_vertices[] = {
       // positions
-      create_vertex(planeSize, 0.0f, planeSize),   // top right
-      create_vertex(planeSize, 0.0f, -planeSize),  // bottom right
-      create_vertex(-planeSize, 0.0f, -planeSize), // bottom left
-      create_vertex(-planeSize, 0.0f, planeSize)   // top left
+      glm::vec4(planeSize, 0.0f, planeSize,1.0),   // top right
+      glm::vec4(planeSize, 0.0f, -planeSize,1.0),  // bottom right
+      glm::vec4(-planeSize, 0.0f, -planeSize,1.0), // bottom left
+      glm::vec4(-planeSize, 0.0f, planeSize,1.0)   // top left
   };
 
   GLuint ground_indices[] = {
@@ -378,12 +370,12 @@ void render_scene(struct scene *scene) {
   };
 
   float roadWidth = 0.15;
-  sceneVertex road_vertices[] = {
+  glm::vec4 road_vertices[] = {
       // positions
-      create_vertex(roadWidth, 0.0f, planeSize),   // top right
-      create_vertex(roadWidth, 0.0f, -planeSize),  // bottom right
-      create_vertex(-roadWidth, 0.0f, -planeSize), // bottom left
-      create_vertex(-roadWidth, 0.0f, planeSize)   // top left
+      glm::vec4(roadWidth, 0.0f, planeSize,1.0),   // top right
+      glm::vec4(roadWidth, 0.0f, -planeSize,1.0),  // bottom right
+      glm::vec4(-roadWidth, 0.0f, -planeSize,1.0), // bottom left
+      glm::vec4(-roadWidth, 0.0f, planeSize,1.0)   // top left
   };
 
   GLuint road_indices[] = {
@@ -530,9 +522,9 @@ void bind_texture(GLuint *texture, std::string &location) {
 }
 
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO,
-                            sceneVertex *vertices, GLuint vertices_length,
+                            glm::vec4 *vertices, GLuint vertices_length,
                             GLuint *indices, GLuint indices_length) {
-  int total_size = 3 * sizeof(GLfloat); // + sizeof(GLuint);
+  int total_size = 4 * sizeof(GLfloat); // + sizeof(GLuint);
   glBindVertexArray(VAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -543,7 +535,7 @@ void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO,
                GL_STATIC_DRAW);
 
   // Position 3D
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, total_size, (void *)0);
+  glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, total_size, (void *)0);
   glEnableVertexAttribArray(0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
