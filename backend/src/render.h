@@ -12,7 +12,7 @@ void set_target_img(const char *str);
 void render_scene(struct scene *scene);
 double get_mean_pixel_value(GLuint texture, int color);
 void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel);
-
+struct detected_lines *get_scene_geometry(struct scene *scene);
 int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
              double roll);
 
