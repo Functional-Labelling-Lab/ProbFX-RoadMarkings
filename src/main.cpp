@@ -294,9 +294,6 @@ sceneVertex get_vertex_in_clip_space(sceneVertex vertex, glm::mat4 projection, g
 	glm::vec4 vertexVector = glm::vec4(vertex.x, vertex.y, vertex.z, vertex.w);
 	glm::vec4 clipVertexVector = projection * view * model * vertexVector;
 
-	//Clipping
-	clipVertexVector =  glm::vec4(clipVertexVector.x,clipVertexVector.y,clipVertexVector.z,clipVertexVector.w);
-
 	//std::cout << glm::to_string(projection) << std::endl;
 	std::cout << glm::to_string(clipVertexVector/clipVertexVector.w) << " <-- " << glm::to_string(clipVertexVector) << std::endl;
 	//return create_vertex(vertexVector.x, vertexVector.y, vertexVector.z,vertexVector.w);
@@ -360,31 +357,35 @@ void render_scene(struct scene *scene)
 	// 		create_vertex(-roadWidth, 0.0f, planeSize)   // top left
 	// };
 
-	// sceneVertex road_vertices[] = {
-	// 		// positions
-	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, planeSize,1), projection, view, model),		// top right
-	// 		get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, -planeSize,1), projection, view, model),	// bottom right
-	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, -planeSize,1), projection, view, model), // bottom left
-	// 		get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, planeSize,1), projection, view, model)		// top left
-	// };
-
 	sceneVertex road_vertices[] = {
 			// positions
-			create_vertex(0.003668, -0.387325, -1.004030, -1.000000),   // top right 0
-			create_vertex(0.003665, 0.377426, 0.999976, 1.000000),	 // bottom right 	1
-			create_vertex(-0.003665, 0.377426, 0.999976, 1.000000), // bottom left 	2
-			create_vertex(-0.003668, -0.387325, -1.004030, -1.000000)   // top left 	3
+			get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, 0,1), projection, view, model),		// top right
+			get_vertex_in_clip_space(create_vertex(roadWidth, 0.0f, -planeSize,1), projection, view, model),	// bottom right
+			get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, -planeSize,1), projection, view, model), // bottom left
+			get_vertex_in_clip_space(create_vertex(-roadWidth, 0.0f, 0,1), projection, view, model)		// top left
 	};
+
+	// sceneVertex road_vertices[] = {
+	// 		// positions
+	// 		create_vertex(11.574559, -20.242743, 0, 1.000000) ,   // top right 0
+	// 		create_vertex(0.003665, 0.377426, 0.999976, 1.000000),	 // bottom right 	1
+	// 		create_vertex(-0.003665, 0.377426, 0.999976, 1.000000), // bottom left 	2
+	// 		create_vertex(-0.003668, -0.387325, -1.004030, -1.000000)   // top left 	3
+	// };
+
+// vec4(11.574559, -15.242743, -5.396849, 1.000000) <-- vec4(0.362132, -0.476898, -0.168851, 0.031287)
+// vec4(0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(0.362132, 37.289722, 98.797714, 98.800125)
+// vec4(-0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(-0.362132, 37.289722, 98.797714, 98.800125)
+// vec4(-11.574559, -15.242743, -5.396849, 1.000000) <-- vec4(-0.362132, -0.476898, -0.168851, 0.031287)
 
 // vec4(-0.003668, 0.387325, 1.004030, 1.000000) <-- vec4(0.362132, -38.243519, -99.135422, -98.737549)
 // vec4(0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(0.362132, 37.289722, 98.797714, 98.800125)
 // vec4(-0.003665, 0.377426, 0.999976, 1.000000) <-- vec4(-0.362132, 37.289722, 98.797714, 98.800125)
 // vec4(0.003668, 0.387325, 1.004030, 1.000000) <-- vec4(-0.362132, -38.243519, -99.135422, -98.737549)
 
-
 	GLuint road_indices[] = {
 			0, 1, 2, // first trianglebind_diff_vertex_atts
-			// 1, 2, 3	 // second triangle
+			1, 2, 3	 // second triangle
 	};
 
 	GLuint VAOs[2], VBOs[2], EBOs[2];
