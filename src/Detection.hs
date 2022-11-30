@@ -21,7 +21,7 @@ import CppFFI
     getMeanPixelValue,
     testBed,
     setTargetImg,
-    renderScene )
+    renderScene, getHoughLines, getSceneLines )
 import Foreign
     ( Storable(..), StablePtr(..), Int32, malloc, Storable(poke) )
 import Foreign.Marshal.Alloc ( malloc )
@@ -113,8 +113,18 @@ trainModel imagePath errFun = do
 main :: IO ()
 -- main = trainModel "data/read_road.jpg" channelError
 main = do
-  imgPath <- newCString "data/real_road.jpg"
-  testBed imgPath 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
+  let scene = Scene (Camera 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0)
+  let hls = getHoughLines "data/real_road.jpg"
+  let sls = getSceneLines scene
+
+  print hls
+  print sls
+
+  let err = compareLines hls sls (1000, 1000)
+  print err
+
+  -- imgPath <- newCString "data/real_road.jpg"
+  -- testBed imgPath 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
   return ()
 
 channelError :: ErrorFunction

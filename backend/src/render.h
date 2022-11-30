@@ -16,6 +16,8 @@ struct detected_lines *get_scene_geometry(struct scene *scene);
 int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
              double roll);
 
+struct detected_lines *get_scene_geometry(struct scene *scene);
+
 struct scene {
   struct camera {
     double x;
