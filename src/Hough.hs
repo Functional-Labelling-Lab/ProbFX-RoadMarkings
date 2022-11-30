@@ -2,6 +2,7 @@ module Hough where
 import CppFFI    (Line, Point)
 import Data.List (sortOn)
 import Data.Ord (comparing)
+import GHC.IO (unsafePerformIO)
 
 type LineCompError = Line -> Line -> Double
 
@@ -21,8 +22,7 @@ compareLines ::
   Double
 compareLines errFun [] _ _= 1
 compareLines errFun ls rs (h,w) 
-  = sum (map (minimum . flip map ls . errFun) rs) 
-    / fromIntegral (h * w * length rs)
+  = sum (map (minimum . flip map ls . errFun) rs) / fromIntegral (h * w * length rs)
 
 -- Using quadrilatierial area as a measure of error
 quadError :: LineCompError

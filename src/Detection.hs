@@ -27,7 +27,7 @@ import Foreign
 import Foreign.Marshal.Alloc ( malloc )
 import OpenSum (Member)
 import System.IO.Unsafe ( unsafePerformIO )
-import Hough (compareLines, quadError)
+import Hough (compareLines, quadError, compError)
 import Foreign.C (CString)
 
 clamp :: (Double, Double) -> Double -> Double
@@ -80,7 +80,7 @@ trainModel errFun disp = do
             (#roll := []) <:>
             (#error := repeat 0) <:>
             nil
-    traceMHs <- mh 1000 (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "pitch", "roll"]
+    traceMHs <- mh 1000000 (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "pitch", "roll"]
     liftS $ disp traceMHs
     return ()
 
@@ -101,8 +101,24 @@ displayResults imgPath traceMHs = do
       putStrLn $ p ++ show (take 10 xs)
       return (head xs)
 
+{-
+BUG: Scene passed to testbed, road does not match lines provided by getSceneLines
+
+Python plot:
+https://trinket.io/python3/65b7ca4a50
+
+The following code demonstrates this. There is a change (see line 354 in render.cpp)
+-}
+
 main :: IO ()
-main = houghTrain "data/real_road.jpg"
+-- main = houghTrain "data/real_road.jpg"
+main = do
+  let scene = Camera {x = -4.157737428065356e-3, y = 0.33617560076802844, z = 0.0, pitch = 5.633504256040617e-3, yaw = 0.0, roll = -0.18965620426531105}
+  imgPath <- newCString "data/real_road.jpg"
+  let s = Scene {camera = scene}
+  print $ getSceneLines s
+  testBed imgPath (x scene) (y scene) (z scene) (pitch scene) (yaw scene) (roll scene)
+  return ()
 
 
 channelTrain :: String -> IO ()
@@ -131,4 +147,8 @@ houghTrain imagePath = do
   trainModel (houghError $ getHoughLines imagePath) (displayResults imgPath)
   where
     houghError :: [Line] -> ErrorFunction
-    houghError sceneLines scene = compareLines quadError sceneLines (getSceneLines scene) (1000, 1000)
+    houghError sceneLines scene = unsafePerformIO $ do
+      let lines = getSceneLines scene 
+      let err = compareLines quadError sceneLines (lines) (10, 10)
+      -- putStrLn $ "Lines: " ++ show lines ++ " error:" ++ show err ++ "scene: " ++ show scene
+      return err

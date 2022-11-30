@@ -66,21 +66,18 @@ int test_bed(const char *str, double x, double y, double z, double pitch, double
 		// Renders into diffFBO where the texture is in diffTexture
 		get_image_mask(context->sceneTexture, context->targetTexture, 0);
 		double error1 = get_mean_pixel_value(context->diffTexture, 0);
-		std::cout << error1 << std::endl;
 		for (int i = 0; i < 120; i++)
 		{
 			render_to_screen(context->diffTexture);
 		}
 		get_image_mask(context->sceneTexture, context->targetTexture, 1);
 		double error2 = get_mean_pixel_value(context->diffTexture, 1);
-		std::cout << error2 << std::endl;
 		for (int i = 0; i < 120; i++)
 		{
 			render_to_screen(context->diffTexture);
 		}
 		get_image_mask(context->sceneTexture, context->targetTexture, 2);
 		double error3 = get_mean_pixel_value(context->diffTexture, 2);
-		std::cout << error3 << std::endl;
 		for (int i = 0; i < 120; i++)
 		{
 			render_to_screen(context->diffTexture);
@@ -92,9 +89,6 @@ int test_bed(const char *str, double x, double y, double z, double pitch, double
 		// Calculate Error
 		// uncomment if you wanna be spammed in the terminal
 		// std::cout << error1 + error2 + error3 << std::endl;
-
-		std::cout << std::endl
-							<< std::endl;
 
 		// break;
 	}
@@ -357,10 +351,11 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 	float planeSize = 100.0f;
 	glm::vec4 road_vertices[] = {
 			// positions
-			glm::vec4(roadWidth, 0.0f, 0, 1),						// top right
-			glm::vec4(roadWidth, 0.0f, -planeSize, 1),	// bottom right
-			glm::vec4(-roadWidth, 0.0f, -planeSize, 1), // bottom left
-			glm::vec4(-roadWidth, 0.0f, 0, 1)						// top left
+			// TODO: Scaling attempted to issue is here
+			glm::vec4(roadWidth, 0.0f, -planeSize/2, 1), // top right
+			glm::vec4(roadWidth, 0.0f, -planeSize, 1),	 // bottom right
+			glm::vec4(-roadWidth, 0.0f, -planeSize, 1),  // bottom left
+			glm::vec4(-roadWidth, 0.0f, -planeSize, 1)	 // top left
 	};
 
 	for (int i = 0; i < 4; i++)
@@ -385,7 +380,6 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 			geometry_lines->len = 0;
 			return geometry_lines;
 		}
-
 	}
 	geometry_lines->len = 2;
 	// Magic to turn screen space coordinates
@@ -401,7 +395,6 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 	// std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
 	// std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
 	// std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
-
 
 	return geometry_lines;
 }
@@ -719,8 +712,6 @@ double get_mean_pixel_value(GLuint texture, int color)
 													 &mipmapLevelWidth);
 	glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT,
 													 &mipmapLevelHeight);
-	std::cout << mipmapLevelWidth << std::endl;
-	std::cout << mipmapLevelHeight << std::endl;
 
 	// Times by 3 for RGB
 	GLfloat *pixels = new GLfloat[mipmapLevelWidth * mipmapLevelHeight * 3];
@@ -739,8 +730,6 @@ double get_mean_pixel_value(GLuint texture, int color)
 			cumB += static_cast<int>(pixels[x * 3 + y * mipmapLevelWidth + 2] * 255);
 		}
 	}
-	std::cout << (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight)
-						<< std::endl;
 	delete[] pixels;
 	return (cumR + cumG + cumB) / (mipmapLevelWidth * mipmapLevelHeight);
 }
@@ -827,6 +816,5 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
 		std::cout << "Severity: notification";
 		break;
 	}
-	std::cout << std::endl;
-	std::cout << std::endl;
+	std::cout << std::endl << std::endl;
 }
