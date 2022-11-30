@@ -344,12 +344,26 @@ struct detected_lines *get_scene_geometry(struct scene *scene){
       glm::vec4(-roadWidth, 0.0f, planeSize,1)   // top left
   };
 
-	//Magic to turn screen space coordinates
-	//....
+	for (int i = 0; i < 4; i++) {
+		road_vertices[i] = combMatrix * road_vertices[i];
+	}
 
-	// struct detect_lines* lines = (detect_lines*) malloc(sizeof(detected_lines_t));
-	// // lines->len = 2; 
-	
+	//Magic to turn screen space coordinates
+	// atm it's divide by abs(4) i.e road_vertices[i][4] but i need to clip after
+
+	struct detected_lines* geometry_lines = (detected_lines*) malloc(sizeof(detected_lines));
+	geometry_lines->len = 2; 
+	geometry_lines->lines = (hough_line*) malloc(sizeof(hough_line)*2);
+	geometry_lines->lines[0].startX = road_vertices[0][0];
+	geometry_lines->lines[0].endX = road_vertices[0][1];
+	geometry_lines->lines[0].startY = road_vertices[1][0];
+	geometry_lines->lines[0].endY = road_vertices[1][1];
+	geometry_lines->lines[1].startX = road_vertices[2][0];
+	geometry_lines->lines[1].endX = road_vertices[2][1];
+	geometry_lines->lines[1].startY = road_vertices[3][0];
+	geometry_lines->lines[1].endY = road_vertices[3][1];
+
+	return geometry_lines;
 }
 
 void render_scene(struct scene *scene) {
