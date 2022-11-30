@@ -376,6 +376,9 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 				road_vertices[i].y /= max_x_y;
 			}
 			// std::cout << glm::to_string(road_vertices[i]) << std::endl;
+			
+			road_vertices[i].x = (road_vertices[i].x + 1) * (SCR_WIDTH / 2);
+			road_vertices[i].y = SCR_HEIGHT - (road_vertices[i].y + 1) * (SCR_HEIGHT / 2);
 		} else 
 		{
 			std::cout << "ERROR: w is non positive, w =" << road_vertices[i].w << std::endl;
@@ -389,14 +392,16 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 	//  atm it's divide by abs(4) i.e road_vertices[i][4] but i need to clip after
 	geometry_lines->lines = (hough_line *)malloc(sizeof(hough_line) * 2);
 
-	geometry_lines->lines[0].startX = road_vertices[0][0]*SCR_WIDTH + SCR_WIDTH/2;
-	geometry_lines->lines[0].endX = road_vertices[0][1]*SCR_HEIGHT + SCR_HEIGHT/2;
-	geometry_lines->lines[0].startY = road_vertices[1][0]*SCR_WIDTH + SCR_WIDTH/2;
-	geometry_lines->lines[0].endY = road_vertices[1][1]*SCR_HEIGHT + SCR_HEIGHT/2;
-	geometry_lines->lines[1].startX = road_vertices[2][0]*SCR_WIDTH + SCR_WIDTH/2;
-	geometry_lines->lines[1].endX = road_vertices[2][1]*SCR_HEIGHT + SCR_HEIGHT/2;
-	geometry_lines->lines[1].startY = road_vertices[3][0]*SCR_WIDTH + SCR_WIDTH/2;
-	geometry_lines->lines[1].endY = road_vertices[3][1]*SCR_HEIGHT + SCR_HEIGHT/2;
+	geometry_lines->lines[0] = {
+		.startX = (int) road_vertices[0].x, .startY = (int) road_vertices[0].y, .endX = (int)  road_vertices[1].x, .endY = (int)  road_vertices[1].y};
+	geometry_lines->lines[1] = {
+		.startX = (int) road_vertices[2].x, .startY = (int) road_vertices[2].y, .endX = (int)  road_vertices[3].x, .endY = (int)  road_vertices[3].y};
+	 
+	// std::cout << "(" << geometry_lines->lines[0].startX << "," << geometry_lines->lines[0].startY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
+
 
 	return geometry_lines;
 }
