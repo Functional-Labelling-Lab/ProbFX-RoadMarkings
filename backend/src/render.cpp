@@ -5,6 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <math.h>
+
 #include <bits/stdc++.h>
 
 #define SHADER_CONSTS
@@ -34,6 +36,10 @@ const char *MSE_COMPUTE_SHADER =
 #include "shaders/mse.computeshader"
     ;
 
+const char *KNN_COMPUTE_SHADER =
+#include "shaders/knn.computeshader"
+    ;
+
 int test_bed(double x, double y, double z, double pitch, double yaw,
              double roll) {
   struct scene scene;
@@ -45,7 +51,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
   scene.camera.roll = roll;
 
   // Seperate Load img function
-  set_target_img("/backend/src/textures/real_road.jpg");
+  set_target_img("/backend/src/images/real_road.jpg");
 
   while (!glfwWindowShouldClose(context->window)) {
     for (int i = 0; i < 120; i++) {
@@ -163,6 +169,23 @@ void init_context() {
   // Stage two buffer (image_diffrence)
   bind_frame_buffer(context->diffFBO, context->diffTexture);
 
+  float target_colors[3][3] = { { 0. / 255., 0. / 255., 0. / 255. },
+                                { 0. / 255., 255. / 255., 0. / 255. },
+                                { 0. / 255., 0. / 255., 255. / 255. } };
+
+  // float target_colors[3][3] = { { 255., 255., 255. },
+  //                               { 255., 255., 255. },
+  //                               { 255., 255., 255. } };
+
+  memcpy(context->target_colors, target_colors, sizeof(float) * 9);
+
+  for (int i=0; i<3; i++) {
+    for (int j=0; j<3; j++) {
+      std::cout << context->target_colors[i][j] << " ";
+    }
+    std::cout << std::endl;
+  }
+
 #ifdef OGL4
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 
@@ -176,6 +199,20 @@ void init_context() {
   GLuint mse_program = glCreateProgram();
   glAttachShader(mse_program, mse_shader);
   glLinkProgram(mse_program);
+  context->computeShader = mse_program;
+  std::cout << message << std::endl;
+
+  GLuint knn_shader = glCreateShader(GL_COMPUTE_SHADER);
+  glShaderSource(knn_shader, 1, &KNN_COMPUTE_SHADER, NULL);
+  glCompileShader(knn_shader);
+  log_length = 0;
+  glGetShaderInfoLog(knn_shader, 1024, &log_length, message);
+  // Link the compute shader
+  GLuint knn_program = glCreateProgram();
+  glAttachShader(knn_program, knn_shader);
+  glLinkProgram(knn_program);
+  context->knnShader = knn_program;
+  std::cout << message << std::endl;
 
   GLuint ssbo_diffs[2];
   glGenBuffers(2, ssbo_diffs);
@@ -213,10 +250,8 @@ void init_context() {
         GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
   }
 
-  std::cout << message << std::endl;
   // exit(1);
 
-  context->computeShader = mse_program;
 #else
 #endif
 
@@ -292,8 +327,111 @@ void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+u_char assign_centroid(unsigned char pixel[3], unsigned char centroids[20][3]) {
+  double closest_distance;
+  u_char closest_centroid;
+
+  for (int c=0; c<20; c++) {
+    unsigned char centroid[3] = {centroids[c][0], centroids[c][1], centroids[c][2]};
+    double distance = 0.;
+    for (int s=0; s<3; s++) {
+      distance += pow(static_cast<double>(centroid[s] - pixel[s]), 2);  
+    }
+
+    if (distance < closest_distance) {
+      closest_distance = distance;
+      closest_centroid = c;
+    }
+  }
+
+  return closest_centroid;
+}
+
+void k_means_clustering(unsigned char* image, int width, int height, int nrChannels) {
+  const int num_centroids = 20;
+
+  // Centroid buffer
+  unsigned char centroids[num_centroids][3];
+
+  // For calculating mean of centroid assignments
+  u_int32_t centroid_counts[num_centroids];
+  u_int32_t centroid_sums[num_centroids][3];
+
+  // Random initialization of pixels
+  for (int c=0; c<num_centroids; c++) {
+    for (int s=0; s<3; s++) {
+      centroids[c][s] = static_cast<unsigned char>(static_cast <float> (rand()) / static_cast <float> (RAND_MAX) * 255.);
+    }
+  }
+
+  // Main loop
+  for (int i=0; i<10; i++) {
+    // Clear centroid calculation buffers
+    for (int c=0; c<num_centroids; c++) {
+      for (int s=0; s<3; s++) {
+        centroid_sums[c][s] = 0.;
+      }
+      centroid_counts[c] = 0;
+    } 
+
+    // Assign each pixel to individual centroids
+    for (int row=0; row<height; row++) {
+      for (int col=0; col<width; col++) {
+        unsigned char pixel[3] = {image[(nrChannels * col) + row * width * nrChannels], image[(nrChannels * col) + row * width * nrChannels + 1], image[(nrChannels * col) + row * width * nrChannels + 2]};
+        size_t centroid = assign_centroid(pixel, centroids);
+
+        for (int s=0; s<3; s++) {
+          centroid_sums[centroid][s] += pixel[s];
+        }
+        centroid_counts[centroid] += 1;
+      }
+    }
+
+    // Caculate mean for each centroid and reassign
+    for (int c=0; c<num_centroids; c++) {
+      for (int s=0; s<3; s++) {
+        centroids[c][s] = static_cast<unsigned char>(static_cast<float>(centroid_sums[c][s]) / static_cast<float>(centroid_counts[c]));
+      }
+    }
+    for (int c=0; c<num_centroids; c++) {
+      std::cout << c << ": " << static_cast<int>(centroids[c][0]) << " " << static_cast<int>(centroids[c][1]) << " " << static_cast<int>(centroids[c][2]) << std::endl;
+    }
+  }
+
+
+  // Write to each pixel its final centroid allocation
+  for (int row=0; row<height; row++) {
+    for (int col=0; col<width; col++) {
+      unsigned char pixel[3] = {image[(nrChannels * col) + row * width * nrChannels], image[(nrChannels * col) + row * width * nrChannels + 1], image[(nrChannels * col) + row * width * nrChannels + 2]};
+      size_t centroid = assign_centroid(pixel, centroids);
+      for (int s=0; s<3; s++) {
+        image[(nrChannels * col) + row * width * nrChannels + s] = centroids[centroid][s];
+      }
+    }
+  }
+}
+
 void set_target_img(const char *str) {
   context->targetTexture = load_texture(str);
+  
+  // glActiveTexture(GL_TEXTURE0);
+  // glBindImageTexture(0, context->targetTexture, 0, false, 0, GL_READ_WRITE,
+  //                    GL_RGBA32F);
+
+  // glUseProgram(context->knnShader);
+
+  // int targetColors = glGetUniformLocation(context->knnShader, "targetColors");
+
+  // // Render ground
+  // // Set channel to 1
+  // glUniform1fv(targetColors, 9, *context->target_colors);
+
+  // // We then run the compute shader
+  // glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
+
+  // glFinish();
+
+  // glTexSubImage2D(GL_TEXTURE_2D, )
 }
 
 sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
@@ -484,11 +622,12 @@ void bind_texture(GLuint *texture, std::string &location) {
   unsigned char *data =
       stbi_load(location.c_str(), &width, &height, &nrChannels, 0);
   if (data) {
+    k_means_clustering(data, width, height, nrChannels);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
   } else {
-    std::cout << "Failed to load texture" << std::endl;
+    std::cout << "Failed to load texture with path: " << location.c_str() << std::endl;
   }
   stbi_image_free(data);
 }
@@ -496,7 +635,7 @@ void bind_texture(GLuint *texture, std::string &location) {
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO,
                             sceneVertex *vertices, GLuint vertices_length,
                             GLuint *indices, GLuint indices_length) {
-  int total_size = 3 * sizeof(GLfloat); // + sizeof(GLuint);
+  int total_size = 3 * sizeof(GLfloat);
   glBindVertexArray(VAO);
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
@@ -569,15 +708,11 @@ double get_mean_pixel_value(GLuint texture, int color) {
   glUseProgram(context->computeShader);
 
   int targetColor = glGetUniformLocation(context->computeShader, "targetColor");
-  glm::vec3 targetColors[3];
-  targetColors[0] = glm::vec3(56.5 / 255., 56.5 / 255., 56.5 / 255.);
-  targetColors[1] = glm::vec3(61.6 / 255., 61.6 / 255., 48.2 / 255.);
-  targetColors[2] = glm::vec3(71.8 / 255., 89.8 / 255., 99.2 / 255.0);
 
   // Render ground
   // Set channel to 1
-  glUniform3f(targetColor, targetColors[color][0], targetColors[color][1],
-              targetColors[color][2]);
+  glUniform3f(targetColor, context->target_colors[color][0], context->target_colors[color][1],
+              context->target_colors[color][2]);
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, context->ssbo_diffs[0]);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, context->ssbo_diffs[0]);

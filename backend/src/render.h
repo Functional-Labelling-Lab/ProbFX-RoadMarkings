@@ -42,6 +42,7 @@ struct opengl_context {
   GLuint diffShader;
   GLuint outShader;
   GLuint computeShader;
+  GLuint knnShader;
 
   // Textures
   GLuint grassTexture;
@@ -65,6 +66,8 @@ struct opengl_context {
 
   GLuint ssbo_nums[2];
   int *ssbo_num_maps[2];
+
+  GLfloat target_colors[3][3]; 
 
   // Texture Buffers
   GLuint sceneTexture;

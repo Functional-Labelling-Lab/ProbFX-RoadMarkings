@@ -1,0 +1,30 @@
+R"#!#(
+#version 430 core
+layout(local_size_x = 8, local_size_y = 8) in;
+layout(rgba32f, binding = 0) uniform image2D img1;
+uniform float targetColors[3 * 3];
+
+vec3 max(vec3 color) {
+    if (color.r >= color.b) {
+        if (color.r >= color.g) {
+            return vec3(0., 0., 0);
+        } else {
+            return vec3(0., 1., 0);
+        }
+    } else {
+        if (color.b >= color.g) {
+            return vec3(0., 0., 1.);
+        } else {
+            return vec3(0., 1., 0);
+        }
+    }
+}
+
+void main()
+{
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+	vec4 inColor = imageLoad(img1, pos);
+
+    imageStore(img1, pos, vec4(max(inColor.rgb), 1.));
+}
+)#!#"

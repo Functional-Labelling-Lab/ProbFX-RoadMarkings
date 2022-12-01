@@ -87,7 +87,7 @@ testBedExample = testBed (0.11319984526740867) (0.3784490271439612) (0.0) (-0.1)
 --- Run training loop
 trainModel :: IO ()
 trainModel = do
-    string <- newCString "backend/src/textures/real_road.jpg"
+    string <- newCString "backend/src/images/real_road.jpg"
     setTargetImg string
 
     sampleIO $ do
