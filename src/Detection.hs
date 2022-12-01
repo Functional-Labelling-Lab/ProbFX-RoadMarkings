@@ -99,9 +99,10 @@ displayResults imgPath traceMHs = do
     testBed imgPath x y z pitch 0.0 roll
     return ()
   where
+    displayIters = [1..10]
     dispVar p x = do
       let xs = concatMap (get x) traceMHs
-      putStrLn $ p ++ "=" ++ show (zip xs [1..]) ++ "\n"
+      putStrLn $ p ++ " = " ++ show (zip xs displayIters)
       return $ head xs
 
 main :: IO ()
@@ -134,8 +135,4 @@ houghTrain imagePath = do
   trainModel (houghError $ getHoughLines imagePath) (displayResults imgPath)
   where
     houghError :: [Line] -> ErrorFunction
-    houghError sceneLines scene = unsafePerformIO $ do
-      let lines = getSceneLines scene 
-      let err = compareLines quadError sceneLines (lines) (10, 10)
-      putStrLn $ "Lines: " ++ show lines ++ " error:" ++ show err ++ "scene: " ++ show scene
-      return err
+    houghError sceneLines scene = compareLines quadError sceneLines (getSceneLines scene ) (10, 10)
