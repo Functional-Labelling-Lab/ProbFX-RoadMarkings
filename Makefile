@@ -7,7 +7,7 @@ reset_col = \033[0m
 all: build
 
 run: build
-	@printf ">> Running cabal side      <<"
+	@printf "$(bold_magenta)>> Running cabal side      <<$(reset_col)"
 	cabal run
 
 build:
