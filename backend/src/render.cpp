@@ -424,11 +424,12 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 		.startX = (int) road_vertices[0].x, .startY = (int) road_vertices[0].y, .endX = (int)  road_vertices[1].x, .endY = (int)  road_vertices[1].y};
 	geometry_lines->lines[1] = {
 		.startX = (int) road_vertices[2].x, .startY = (int) road_vertices[2].y, .endX = (int)  road_vertices[3].x, .endY = (int)  road_vertices[3].y};
-	 
-	std::cout << "(" << geometry_lines->lines[0].startX << "," << geometry_lines->lines[0].startY << ")" << std::endl;
-	std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
-	std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
-	std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
+
+	// TODO: Remove debug prints
+	// std::cout << "(" << geometry_lines->lines[0].startX << "," << geometry_lines->lines[0].startY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
+	// std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
 
 	return geometry_lines;
 }

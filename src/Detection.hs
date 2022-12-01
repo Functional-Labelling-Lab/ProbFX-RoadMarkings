@@ -80,45 +80,32 @@ trainModel errFun disp = do
             (#roll := []) <:>
             (#error := repeat 0) <:>
             nil
-    traceMHs <- mh 1000000 (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "pitch", "roll"]
+    traceMHs <- mh iterations (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "pitch", "roll"]
     liftS $ disp traceMHs
     return ()
+  where
+    iterations = 10
+
 
 displayResults :: CString -> [Env RoadEnv] -> IO ()
 displayResults imgPath traceMHs = do
-    x     <- dispVar "x:    " #x
-    y     <- dispVar "y:    " #y
-    pitch <- dispVar "pitch:" #pitch
-    z     <- dispVar "z:    " #z
-    yaw   <- dispVar "yaw:  " #yaw
-    roll  <- dispVar "roll: " #roll
-    error <- dispVar "error:" #error
+    x     <- dispVar "x    " #x
+    y     <- dispVar "y    " #y
+    pitch <- dispVar "pitch" #pitch
+    z     <- dispVar "z    " #z
+    yaw   <- dispVar "yaw  " #yaw
+    roll  <- dispVar "roll " #roll
+    error <- dispVar "error" #error
     testBed imgPath x y z pitch 0.0 roll
     return ()
   where
     dispVar p x = do
       let xs = concatMap (get x) traceMHs
-      putStrLn $ p ++ show (take 10 xs)
-      return (head xs)
-
-{-
-BUG: Scene passed to testbed, road does not match lines provided by getSceneLines
-
-Python plot:
-https://trinket.io/python3/65b7ca4a50
-
-The following code demonstrates this. There is a change (see line 354 in render.cpp)
--}
+      putStrLn $ p ++ "=" ++ show (zip xs [1..]) ++ "\n"
+      return $ head xs
 
 main :: IO ()
--- main = houghTrain "data/real_road.jpg"
-main = do
-  let scene = Camera {x = -4.157737428065356e-3, y = 0.33617560076802844, z = 0.0, pitch = 5.633504256040617e-3, yaw = 0.0, roll = -0.18965620426531105}
-  imgPath <- newCString "data/real_road.jpg"
-  let s = Scene {camera = scene}
-  print $ getSceneLines s
-  testBed imgPath (x scene) (y scene) (z scene) (pitch scene) (yaw scene) (roll scene)
-  return ()
+main = houghTrain "data/real_road.jpg"
 
 
 channelTrain :: String -> IO ()
@@ -150,5 +137,5 @@ houghTrain imagePath = do
     houghError sceneLines scene = unsafePerformIO $ do
       let lines = getSceneLines scene 
       let err = compareLines quadError sceneLines (lines) (10, 10)
-      -- putStrLn $ "Lines: " ++ show lines ++ " error:" ++ show err ++ "scene: " ++ show scene
+      putStrLn $ "Lines: " ++ show lines ++ " error:" ++ show err ++ "scene: " ++ show scene
       return err
