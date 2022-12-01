@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <string>
+#include <glm/glm.hpp>
 
 extern "C" {
 void set_target_img(const char *str);
@@ -11,9 +12,11 @@ void set_target_img(const char *str);
 void render_scene(struct scene *scene);
 double get_mean_pixel_value(GLuint texture, int color);
 void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel);
-
+struct detected_lines *get_scene_geometry(struct scene *scene);
 int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
              double roll);
+
+struct detected_lines *get_scene_geometry(struct scene *scene);
 
 struct scene {
   struct camera {
@@ -27,12 +30,6 @@ struct scene {
   camera camera;
 };
 }
-
-struct sceneVertex {
-  GLfloat x;
-  GLfloat y;
-  GLfloat z;
-};
 
 struct opengl_context {
   GLFWwindow *window;
@@ -74,10 +71,9 @@ struct opengl_context {
 };
 
 void init_context();
-sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z);
 GLFWwindow *init_gl_and_get_window();
 void bind_scene_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO,
-                            sceneVertex *vertices, GLuint vertices_length,
+                            glm::vec4 *vertices, GLuint vertices_length,
                             GLuint *indices, GLuint indices_length);
 void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
                            GLuint vertices_length, GLuint *indices,

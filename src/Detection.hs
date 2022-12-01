@@ -21,13 +21,14 @@ import CppFFI
     getMeanPixelValue,
     testBed,
     setTargetImg,
-    renderScene )
+    renderScene, getHoughLines, getSceneLines, Line )
 import Foreign
     ( Storable(..), StablePtr(..), Int32, malloc, Storable(poke) )
 import Foreign.Marshal.Alloc ( malloc )
 import OpenSum (Member)
 import System.IO.Unsafe ( unsafePerformIO )
-import Hough (compareLines)
+import Hough (compareLines, quadError, compError)
+import Foreign.C (CString)
 
 clamp :: (Double, Double) -> Double -> Double
 clamp (a, b) = min b . max a
@@ -44,8 +45,8 @@ type RoadEnv =
   , "error"     := Double
  ]
 
-initRoadSample :: forall env sig m. 
-  (Observables env '["x", "y", "z", "pitch", "yaw", "roll"] Double, Has (Model env) sig m) 
+initRoadSample :: forall env sig m.
+  (Observables env '["x", "y", "z", "pitch", "yaw", "roll"] Double, Has (Model env) sig m)
    => m Scene
 initRoadSample = do
   x     <- uniform @env (-0.5) 0.5 #x
@@ -54,79 +55,84 @@ initRoadSample = do
   pitch <- uniform @env (-0.2) 0.2 #pitch
   yaw   <- uniform @env (-0.2) 0.2 #yaw
   roll  <- uniform @env (-0.2) 0.2 #roll
-  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=0.0, roll=roll} }
+  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=0.0, yaw=0.0, roll=roll} }
 
 
-roadGenerationModel :: forall env sig m. 
-  (Observables env ["x", "y", "z", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m) 
-   => ErrorFunction 
+roadGenerationModel :: forall env sig m.
+  (Observables env ["x", "y", "z", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m)
+   => ErrorFunction
    -> m ()
 roadGenerationModel errFun = do
   roadSample <- initRoadSample @env
   error <- normal @env (errFun roadSample) 50 #error
   return ()
 
-trainModel :: String -> ErrorFunction -> IO ()
-trainModel imagePath errFun = do
-  imgPath <- newCString imagePath
-  setTargetImg imgPath
-
+trainModel :: ErrorFunction -> ([Env RoadEnv] -> IO ()) -> IO ()
+trainModel errFun disp = do
   sampleIO $ do
     let mh_env :: Env RoadEnv
-        mh_env = 
-            (#x := []) <:> 
-            (#y := []) <:> 
-            (#z := []) <:> 
-            (#pitch := []) <:> 
-            (#yaw := []) <:> 
-            (#roll := []) <:> 
-            (#error := repeat 0) <:> 
+        mh_env =
+            (#x := []) <:>
+            (#y := []) <:>
+            (#z := []) <:>
+            (#pitch := []) <:>
+            (#yaw := []) <:>
+            (#roll := []) <:>
+            (#error := repeat 0) <:>
             nil
-
-    traceMHs <- mh 1000 (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "z", "pitch", "roll"]
-
-    -- get resulting traces for parameters
-    let getvar x = concatMap (get x) traceMHs
-
-    let xs      = getvar #x
-    let ys      = getvar #y
-    let pitches = getvar #pitch
-    let zs      = getvar #z
-    let yaws    = getvar #yaw
-    let rolls   = getvar #roll
-    let errors  = getvar #error
-
-    disp xs
-    disp ys
-    disp pitches
-    disp zs
-    disp yaws
-    disp rolls    
-    liftS $ print =<< testBed imgPath (head xs) (head ys) (head zs) (head pitches) 0.0 (head rolls)
-    disp errors
-    liftS $ print $ length xs
-    liftS $ print (fromIntegral (length xs) / 100.0)
+    traceMHs <- mh iterations (roadGenerationModel @RoadEnv errFun) mh_env ["x", "y", "pitch", "roll"]
+    liftS $ disp traceMHs
+    return ()
   where
-    disp = liftS . print . take 10
+    iterations = 10
 
+
+displayResults :: CString -> [Env RoadEnv] -> IO ()
+displayResults imgPath traceMHs = do
+    x     <- dispVar "x    " #x
+    y     <- dispVar "y    " #y
+    pitch <- dispVar "pitch" #pitch
+    z     <- dispVar "z    " #z
+    yaw   <- dispVar "yaw  " #yaw
+    roll  <- dispVar "roll " #roll
+    error <- dispVar "error" #error
+    testBed imgPath x y z pitch 0.0 roll
+    return ()
+  where
+    displayIters = [1..10]
+    dispVar p x = do
+      let xs = concatMap (get x) traceMHs
+      putStrLn $ p ++ " = " ++ show (zip xs displayIters)
+      return $ head xs
 
 main :: IO ()
--- main = trainModel "data/read_road.jpg" channelError
-main = do
-  imgPath <- newCString "data/real_road.jpg"
-  testBed imgPath 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
-  return ()
+main = houghTrain "data/real_road.jpg"
 
-channelError :: ErrorFunction
-channelError s = unsafePerformIO $ do
-  scene <- malloc
-  poke scene s
-  renderScene scene
-  findTextureDifference 0
-  first_error <- getMeanPixelValue 0
-  findTextureDifference 1
-  second_error <- getMeanPixelValue 1
-  findTextureDifference 2
-  third_error <- getMeanPixelValue 2
-  print (first_error + second_error + third_error)
-  return (first_error + second_error + third_error)
+
+channelTrain :: String -> IO ()
+channelTrain imagePath = do
+  imgPath <- newCString imagePath
+  setTargetImg imgPath
+  trainModel channelError (displayResults imgPath)
+  where
+    channelError :: ErrorFunction
+    channelError s = unsafePerformIO $ do
+      scene <- malloc
+      poke scene s
+      renderScene scene
+      findTextureDifference 0
+      first_error <- getMeanPixelValue 0
+      findTextureDifference 1
+      second_error <- getMeanPixelValue 1
+      findTextureDifference 2
+      third_error <- getMeanPixelValue 2
+      print (first_error + second_error + third_error)
+      return (first_error + second_error + third_error)
+
+houghTrain :: String -> IO ()
+houghTrain imagePath = do
+  imgPath <- newCString imagePath
+  trainModel (houghError $ getHoughLines imagePath) (displayResults imgPath)
+  where
+    houghError :: [Line] -> ErrorFunction
+    houghError sceneLines scene = compareLines quadError sceneLines (getSceneLines scene ) (10, 10)

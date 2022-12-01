@@ -13,6 +13,7 @@ module CppFFI (
     getMeanPixelValue,
     findTextureDifference,
     getHoughLines,
+    getSceneLines,
     Point,
     Line
   ) where
@@ -88,10 +89,35 @@ foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double
 foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: Int32 -> IO ()
+
 foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
+foreign import ccall unsafe "scene_lines_c" rawSceneLines :: Ptr Scene -> IO (Ptr DetectedLines)
 
 -- By default Haskell's free uses C's free, but we use C's directly for a guarantee
 foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
+
+getSceneLines :: Scene -> [Line]
+getSceneLines s = unsafePerformIO $ do
+  -- Create pointer to scene
+  scene <- malloc
+  poke scene s
+
+  -- Read the array of lines and extract
+  rawPtr <- rawSceneLines scene
+  raw <- peek rawPtr
+
+  sceneLines <- peekArray (fromIntegral $ len raw) (hlines raw)
+  let lines = map extractHoughLines sceneLines
+
+  -- Clean up
+  if fromIntegral (len raw) /= 0
+    then do c_free (hlines raw)
+    else do return ()
+
+  c_free rawPtr
+  free scene
+
+  return lines
 
 getHoughLines :: String -> [Line]
 getHoughLines path = unsafePerformIO $ withCString path $ \c_path ->

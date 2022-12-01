@@ -21,7 +21,7 @@ bool sufficiently_vertical(cv::Vec4i l) {
 detected_lines_t *detect_lines(const char *image) {
   std::string filename(image);
 
-  cv::Mat dst, cdst;
+  cv::Mat dst;
   cv::Mat src = cv::imread(filename, cv::IMREAD_GRAYSCALE);
 
   if (src.empty()) {
@@ -33,21 +33,36 @@ detected_lines_t *detect_lines(const char *image) {
   std::vector<cv::Vec4i> linesP;
   std::vector<cv::Vec4i> suff_vert_lines;
 
-  cv::Canny(src, dst, 50, 200, 3);
-  cv::HoughLinesP(dst, linesP, 1, CV_PI / 180, 50, 50, 10);
+  cv::Canny(src, dst, 100, 200, 3);
+  cv::HoughLinesP(dst, linesP, 1, CV_PI / 180, 50, 200, 10);
   std::copy_if(linesP.begin(), linesP.end(),
                std::back_inserter(suff_vert_lines),
                [](cv::Vec4i v) { return sufficiently_vertical(v); });
 
+  // Code to draw detected Hough lines to screen
+  
+  // cv::Mat cdst;
+  // cv::cvtColor(dst, cdst, cv::COLOR_GRAY2BGR);
+
+  // for (size_t i = 0; i < suff_vert_lines.size(); i++) {
+  //   cv::Vec4i l = suff_vert_lines[i];
+  //   cv::line(cdst, cv::Point(l[0], l[1]), cv::Point(l[2], l[3]),
+  //        cv::Scalar(0, 0, 255), 3, cv::LINE_AA);
+  // }
+
+  // cv::imshow("Source", src);
+  // cv::imshow("Lines", cdst);
+  // cv::waitKey();
+
   detected_lines_t *new_dls =
-      (detected_lines_t *)malloc(sizeof(detected_lines_t));
+      (detected_lines_t *) malloc(sizeof(detected_lines_t));
 
   if (!new_dls)
     exit(EXIT_FAILURE);
 
   new_dls->len = suff_vert_lines.size();
   new_dls->lines =
-      (hough_line_t *)malloc(suff_vert_lines.size() * sizeof(hough_line_t));
+      (hough_line_t *) malloc(suff_vert_lines.size() * sizeof(hough_line_t));
 
   if (!new_dls->lines)
     exit(EXIT_FAILURE);

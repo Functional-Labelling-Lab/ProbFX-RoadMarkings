@@ -36,3 +36,8 @@ detected_lines_t *hough_lines_c(const char *str) {
   check_context();
   return detect_lines(str);
 }
+
+detected_lines_t *scene_lines_c(struct scene *scene) {
+  check_context();
+  return get_scene_geometry(scene);
+}

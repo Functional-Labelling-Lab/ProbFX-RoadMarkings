@@ -11,6 +11,7 @@ int test_bed_c(const char *str, double x, double y, double z, double pitch, doub
 double get_mean_pixel_value_c(int color);
 void find_texture_difference_c(int color);
 detected_lines_t *hough_lines_c(const char *str);
+detected_lines_t *scene_lines_c(struct scene *scene);
 }
 
 #endif
