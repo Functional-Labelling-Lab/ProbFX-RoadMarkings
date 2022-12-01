@@ -348,32 +348,61 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 
 	// Needs to be refactored so generated the same way as render_scene
 	float roadWidth = 0.15;
-	float planeSize = 100.0f;
+	float planeSize = 10.0f;
 	glm::vec4 road_vertices[] = {
 			// positions
 			// TODO: Scaling attempted to issue is here
-			glm::vec4(roadWidth, 0.0f, -planeSize/2, 1), // top right
-			glm::vec4(roadWidth, 0.0f, -planeSize, 1),	 // bottom right
-			glm::vec4(-roadWidth, 0.0f, -planeSize, 1),  // bottom left
-			glm::vec4(-roadWidth, 0.0f, -planeSize, 1)	 // top left
+			glm::vec4(-roadWidth, 0.0f, -planeSize, 1),  //top left
+			glm::vec4(-roadWidth, 0.0f, -planeSize/5, 1),	//bottom left
+			glm::vec4(roadWidth, 0.0f, -planeSize, 1),	 //top right
+			glm::vec4(roadWidth, 0.0f, -planeSize/5, 1) //bottom right
 	};
-
+	GLfloat x_grad, y_grad, x_lambda, y_lambda;
 	for (int i = 0; i < 4; i++)
 	{
 		road_vertices[i] = (combMatrix * road_vertices[i]);
 		if (road_vertices[i].w > 0)
 		{
 			road_vertices[i] = road_vertices[i] / road_vertices[i].w;
-			//Clipping
-			GLfloat max_x_y = std::max(abs(road_vertices[i].x),abs(road_vertices[i].y));
-			if (max_x_y > 1) {
-				road_vertices[i].x /= max_x_y;
-				road_vertices[i].y /= max_x_y;
-			}
-			// std::cout << glm::to_string(road_vertices[i]) << std::endl;
-			
-			road_vertices[i].x = (road_vertices[i].x + 1) * (SCR_WIDTH / 2);
-			road_vertices[i].y = SCR_HEIGHT - (road_vertices[i].y + 1) * (SCR_HEIGHT / 2);
+			if (i%2 == 1) {
+				//Extrapolate left line either to x = -1 or y = -1
+				// std::cout << glm::to_string(road_vertices[i]) << std::endl;
+				x_grad = road_vertices[i].x - road_vertices[i-1].x;
+				y_grad = road_vertices[i].y - road_vertices[i-1].y;
+				// std::cout << x_grad << " " << y_grad << std::endl;
+				
+				//Check if x or y doesn't change (so no div 0 errors)
+				if (x_grad == 0){
+					road_vertices[i].y = -1;
+				} else if (y_grad == 0){
+					if (x_grad < 0){
+						road_vertices[i].x = -1;
+					} else {
+						road_vertices[i].x = 1;
+					}
+				} else {
+					if (x_grad < 0)
+					{
+						//Checking against negative x
+						x_lambda = (-1.0-road_vertices[i].x)/x_grad;
+					} else if (x_grad > 0) {
+						//Checking against positive x
+						x_lambda = (1.0-road_vertices[i].x)/x_grad;
+					} 
+
+					//Solve for lambda that goes to y border
+					y_lambda = (-1.0-road_vertices[i].y)/y_grad;
+
+					//Check if it gets to x+-1 before it gets to y - 1
+					if (road_vertices[i].y + y_grad*x_lambda >= -1.0) {
+						road_vertices[i].x = road_vertices[i].x + x_grad*x_lambda;
+						road_vertices[i].y = road_vertices[i].y + y_grad*x_lambda;
+					} else {
+						road_vertices[i].x = road_vertices[i].x + x_grad*y_lambda;
+						road_vertices[i].y = road_vertices[i].y + y_grad*y_lambda;
+					}
+				}
+			} 
 		} else 
 		{
 			std::cout << "ERROR: w is non positive, w =" << road_vertices[i].w << std::endl;
@@ -381,6 +410,12 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 			return geometry_lines;
 		}
 	}
+
+	for (int i = 0; i < 4; i++) {
+		road_vertices[i].x = (road_vertices[i].x + 1) * (SCR_WIDTH / 2);
+		road_vertices[i].y = SCR_HEIGHT - (road_vertices[i].y + 1) * (SCR_HEIGHT / 2);
+	}
+
 	geometry_lines->len = 2;
 	// Magic to turn screen space coordinates
 	//  atm it's divide by abs(4) i.e road_vertices[i][4] but i need to clip after
@@ -391,10 +426,10 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 	geometry_lines->lines[1] = {
 		.startX = (int) road_vertices[2].x, .startY = (int) road_vertices[2].y, .endX = (int)  road_vertices[3].x, .endY = (int)  road_vertices[3].y};
 	 
-	// std::cout << "(" << geometry_lines->lines[0].startX << "," << geometry_lines->lines[0].startY << ")" << std::endl;
-	// std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
-	// std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
-	// std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
+	std::cout << "(" << geometry_lines->lines[0].startX << "," << geometry_lines->lines[0].startY << ")" << std::endl;
+	std::cout << "(" << geometry_lines->lines[0].endX << "," << geometry_lines->lines[0].endY << ")" << std::endl;
+	std::cout << "(" << geometry_lines->lines[1].startX << "," << geometry_lines->lines[1].startY << ")" << std::endl;
+	std::cout << "(" << geometry_lines->lines[1].endX << "," << geometry_lines->lines[1].endY << ")" << std::endl;
 
 	return geometry_lines;
 }
