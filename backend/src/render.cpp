@@ -392,7 +392,6 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 
 					//Solve for lambda that goes to y border
 					y_lambda = (-1.0-road_vertices[i].y)/y_grad;
-
 					//Check if it gets to x+-1 before it gets to y - 1
 					if (road_vertices[i].y + y_grad*x_lambda >= -1.0) {
 						road_vertices[i].x = road_vertices[i].x + x_grad*x_lambda;
