@@ -200,7 +200,7 @@ syntheticBenchmark errFun = do
       let accuracy = sceneAccuracy scene predictedScene
       putStrLn $ "Scene:     " ++ show scene
       putStrLn $ "predicted: " ++ show predictedScene
-      putStrLn ("FINAL ACCURACY: " ++ show accuracy)
+      putStrLn $ "FINAL ACCURACY: " ++ show accuracy
 
       return accuracy
     
@@ -213,10 +213,9 @@ syntheticBenchmark errFun = do
       mPitch <- ask @RoadEnv #pitch
       mYaw   <- ask @RoadEnv #yaw
       mRoll  <- ask @RoadEnv #roll
-      mError <- ask @RoadEnv #error
-      
-      return $ case (mX, mY, mZ, mPitch, mYaw, mRoll, mError) of
-        (Just x, Just y, Just z, Just pitch, Just yaw, Just roll, Just error) -> Just $ Scene {
+
+      return $ case (mX, mY, mZ, mPitch, mYaw, mRoll) of
+        (Just x, Just y, Just z, Just pitch, Just yaw, Just roll) -> Just $ Scene {
           camera = Camera {
               x = x,
               y = y,
@@ -248,8 +247,8 @@ syntheticBenchmark errFun = do
     
     sceneToVec :: Scene -> [Double]
     sceneToVec scene = zipWith normalise
-      [xRange] --, yRange, zRange, pitchRange, yawRange, rollRange]
-      (map ($ camera scene) [x]) -- , y, z, pitch, yaw, roll])
+      [xRange, yRange, zRange, pitchRange, yawRange, rollRange]
+      (map ($ camera scene) [x, y, z, pitch, yaw, roll])
     
     xRange, yRange, zRange, pitchRange, yawRange, rollRange :: (Double, Double)
     xRange = (-0.4, 0.4)
