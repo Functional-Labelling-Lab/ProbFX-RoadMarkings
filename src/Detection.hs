@@ -154,7 +154,6 @@ channelError s = unsafePerformIO $ do
   second_error <- getMeanPixelValue 1
   findTextureDifference 2
   third_error <- getMeanPixelValue 2
-  print (first_error + second_error + third_error)
   return (first_error + second_error + third_error)
 
 

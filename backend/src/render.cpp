@@ -60,19 +60,19 @@ int test_bed(const char *str, double x, double y, double z, double pitch, double
     // Renders into diffFBO where the texture is in diffTexture
     get_image_mask(context->sceneTexture, context->targetTexture, 0);
     double error1 = get_mean_pixel_value(context->diffTexture, 0);
-    std::cout << error1 << std::endl;
+    // std::cout << error1 << std::endl;
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->diffTexture);
     }
     get_image_mask(context->sceneTexture, context->targetTexture, 1);
     double error2 = get_mean_pixel_value(context->diffTexture, 1);
-    std::cout << error2 << std::endl;
+    // std::cout << error2 << std::endl;
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->diffTexture);
     }
     get_image_mask(context->sceneTexture, context->targetTexture, 2);
     double error3 = get_mean_pixel_value(context->diffTexture, 2);
-    std::cout << error3 << std::endl;
+    // std::cout << error3 << std::endl;
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->diffTexture);
     }
