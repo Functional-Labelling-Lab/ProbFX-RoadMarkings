@@ -63,6 +63,15 @@ type RoadEnv =
   , "error"     := Double
  ]
 
+    
+xRange, yRange, zRange, pitchRange, yawRange, rollRange :: (Double, Double)
+xRange = (-0.5, 0.5)
+yRange = (0.05, 0.5)
+zRange = (-0.5, 0.5)
+pitchRange = (-0.2, 0.2)
+yawRange = (-0.2, 0.2)
+rollRange = (-0.2, 0.2)
+
 emptyRoadEnv :: Env RoadEnv
 emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #yaw := [] <:> #roll := [] <:> #error := repeat 0 <:> nil
 
@@ -71,13 +80,13 @@ initRoadSample :: forall env sig m.
   (Observables env '["x", "y", "z", "pitch", "yaw", "roll"] Double, Has (Model env) sig m) 
    => m Scene
 initRoadSample = do
-  x     <- uniform @env (-0.5) 0.5 #x
-  y     <- uniform @env   0.05 0.5 #y
-  z     <- uniform @env (-0.5) 0.5 #z
-  pitch <- uniform @env (-0.2) 0.2 #pitch
-  yaw   <- uniform @env (-0.2) 0.2 #yaw
-  roll  <- uniform @env (-0.2) 0.2 #roll
-  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=0.0, yaw=0.0, roll=roll} }
+  x     <- uniform @env (fst xRange) (snd xRange) #x
+  y     <- uniform @env (fst yRange) (snd yRange) #y
+  z     <- uniform @env (fst zRange) (snd zRange) #z
+  pitch <- uniform @env (fst pitchRange) (snd pitchRange) #pitch
+  yaw   <- uniform @env (fst yawRange) (snd yawRange) #yaw
+  roll  <- uniform @env (fst rollRange) (snd rollRange) #roll
+  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=0.0, roll=roll} }
 
 
 roadGenerationModel :: forall env sig m.
@@ -229,10 +238,14 @@ syntheticBenchmark errFun = do
 
     sceneAccuracy :: Scene -> Scene -> Double
     -- POST: 0 <= sceneAccuracy s s' <= 1
-    sceneAccuracy scene scene' = 1 - normalise (0, sqrt n) (euclidian sv (sceneToVec scene'))
+    sceneAccuracy scene scene' = unsafePerformIO $ do
+        print sv
+        print sv'
+        return $ 1 - normalise (0, sqrt n) (euclidian sv sv')
       where
         n  = fromIntegral $ length sv
         sv = sceneToVec scene
+        sv' = sceneToVec scene'
 
     normalise :: (Double, Double) -> Double -> Double
     -- PRE: lower <= value <= upper
@@ -241,24 +254,13 @@ syntheticBenchmark errFun = do
     normalise (lower, upper) value = (value - lower) / (upper - lower)
 
     euclidian :: Floating a => [a] -> [a] -> a
-    euclidian = (sqrt . sum) ... zipWith (join (*) ... subtract)
-      where
-        (...) = (.)(.)(.)
-    
+    euclidian xs ys = sqrt $ sum $ zipWith (\x y -> (x - y) ^ 2) xs ys
+
     sceneToVec :: Scene -> [Double]
     sceneToVec scene = zipWith normalise
       [xRange, yRange, zRange, pitchRange, yawRange, rollRange]
       (map ($ camera scene) [x, y, z, pitch, yaw, roll])
-    
-    xRange, yRange, zRange, pitchRange, yawRange, rollRange :: (Double, Double)
-    xRange = (-0.4, 0.4)
-    yRange = (0.05, 2)
-    zRange = (-1, 1)
-    pitchRange = (-0.2, 0.2)
-    yawRange = (0.2, 0.3)
-    rollRange = (0.2, 0.3)
-
-
+  
 main :: IO ()
 -- main = houghTrain "data/real_road.jpg"
 -- main = trainModel "data/read_road.jpg" channelError

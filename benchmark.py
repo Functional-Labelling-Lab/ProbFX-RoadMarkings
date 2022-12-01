@@ -1,8 +1,8 @@
 import subprocess, tempfile, re
-from typing import Tuple, Any
+from typing import Tuple, Any, Optional
 
-BENCHMARK_SIZE: int = 50
-BENCHMARK_BATCH_SIZE: int = 5
+BENCHMARK_SIZE: int = 1
+BENCHMARK_BATCH_SIZE: int = 1
 BENCHMARK_MSG = f"""
 ======================================================
 ProbFX RoadMarkings Benchmarking Suite.
@@ -24,7 +24,7 @@ def start_benchmark(iteration: int) -> Tuple[int, Any, Any]:
                 stdout=output, stderr=output, shell=True))
 
 
-def extract_benchmark(output: bytes) -> float | None:
+def extract_benchmark(output: bytes) -> Optional[float]:
     if (res := re.match("FINAL ACCURACY: *(\d.*)[\n ]*", output.decode("utf-8"))) is not None:
         (acc,) = res.groups()
         return float(acc)
@@ -32,7 +32,7 @@ def extract_benchmark(output: bytes) -> float | None:
         print(f"Failed to extract accuracy from {output}")
 
 
-def end_benchmark(iteration: int, output: Any, process: Any) -> float | None:
+def end_benchmark(iteration: int, output: Any, process: Any) -> Optional[float]:
     print(f"Waiting on benchmark:{iteration:3}")
     process.wait()
     output.seek(0)
