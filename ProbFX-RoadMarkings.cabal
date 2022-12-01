@@ -43,7 +43,7 @@ library
 executable ProbFX-RoadMarkings
     buildable:        True
     main-is:          Detection.hs
-    build-depends:    base, prob-fx, ProbFX-RoadMarkings, fused-effects
+    build-depends:    base, prob-fx, ProbFX-RoadMarkings, fused-effects, random
 
     hs-source-dirs:   src
     other-modules:    Hough

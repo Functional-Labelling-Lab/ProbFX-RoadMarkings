@@ -90,6 +90,8 @@ wsl --shutdown
 # reopen wsl terminal to restart
 ```
 
+Python 3.10 is also required for benchmarking.
+
 ### Build & Clean
 To simplify the build process we use a makefile to invoke cabal
 ```bash
@@ -97,4 +99,10 @@ make       # same as make build
 make run
 make build
 make clean
+```
+
+### Benchmarking
+To run the synthetic benchmark suite
+```bash
+make bench
 ```

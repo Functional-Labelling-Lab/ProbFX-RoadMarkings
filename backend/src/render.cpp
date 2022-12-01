@@ -35,66 +35,62 @@ const char *MSE_COMPUTE_SHADER =
 #include "shaders/mse.computeshader"
 		;
 
-int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
-						 double roll)
-{
-	struct scene scene;
-	scene.camera.x = x;
-	scene.camera.y = y;
-	scene.camera.z = z;
-	scene.camera.pitch = pitch;
-	scene.camera.yaw = yaw;
-	scene.camera.roll = roll;
+int test_bed(const char *str, double x, double y, double z, double pitch, double yaw, double roll) {
+  struct scene scene;
+  scene.camera.x = x;
+  scene.camera.y = y;
+  scene.camera.z = z;
+  scene.camera.pitch = pitch;
+  scene.camera.yaw = yaw;
+  scene.camera.roll = roll;
 
-	// Seperate Load img function
-	set_target_img(str);
+  // Seperate Load img function
+  set_target_img(str);
 
-	while (!glfwWindowShouldClose(context->window))
-	{
-		for (int i = 0; i < 120; i++)
-		{
-			render_to_screen(context->targetTexture);
-		}
-		// Renders into sceneFBO where the texture is in sceneTexture
-		render_scene(&scene);
-		get_scene_geometry(&scene);
+  while (!glfwWindowShouldClose(context->window)) {
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->targetTexture);
+    }
+    // Renders into sceneFBO where the texture is in sceneTexture
+    render_scene(&scene, context->sceneFBO);
 
-		for (int i = 0; i < 120; i++)
-		{
-			render_to_screen(context->sceneTexture);
-		}
-		// Renders into diffFBO where the texture is in diffTexture
-		get_image_mask(context->sceneTexture, context->targetTexture, 0);
-		double error1 = get_mean_pixel_value(context->diffTexture, 0);
-		for (int i = 0; i < 120; i++)
-		{
-			render_to_screen(context->diffTexture);
-		}
-		get_image_mask(context->sceneTexture, context->targetTexture, 1);
-		double error2 = get_mean_pixel_value(context->diffTexture, 1);
-		for (int i = 0; i < 120; i++)
-		{
-			render_to_screen(context->diffTexture);
-		}
-		get_image_mask(context->sceneTexture, context->targetTexture, 2);
-		double error3 = get_mean_pixel_value(context->diffTexture, 2);
-		for (int i = 0; i < 120; i++)
-		{
-			render_to_screen(context->diffTexture);
-		}
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->sceneTexture);
+    }
+    // Renders into diffFBO where the texture is in diffTexture
+    get_image_mask(context->sceneTexture, context->targetTexture, 0);
+    double error1 = get_mean_pixel_value(context->diffTexture, 0);
+    // std::cout << error1 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
+    get_image_mask(context->sceneTexture, context->targetTexture, 1);
+    double error2 = get_mean_pixel_value(context->diffTexture, 1);
+    // std::cout << error2 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
+    get_image_mask(context->sceneTexture, context->targetTexture, 2);
+    double error3 = get_mean_pixel_value(context->diffTexture, 2);
+    // std::cout << error3 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
 
-		// Render to screen for visual debugging
+    // Render to screen for visual debugging
 
-		// TODO: Sort this out:
-		// Calculate Error
-		// uncomment if you wanna be spammed in the terminal
-		// std::cout << error1 + error2 + error3 << std::endl;
+    // TODO: Sort this out:
+    // Calculate Error
+    // uncomment if you wanna be spammed in the terminal
+    // std::cout << error1 + error2 + error3 << std::endl;
 
-		// break;
-	}
-	terminate_context();
+    std::cout << std::endl << std::endl;
 
-	return 0;
+    // break;
+  }
+  terminate_context();
+
+  return 0;
 }
 
 void init_context()
@@ -434,8 +430,7 @@ struct detected_lines *get_scene_geometry(struct scene *scene)
 	return geometry_lines;
 }
 
-void render_scene(struct scene *scene)
-{
+void render_scene(struct scene *scene, GLuint FBO) {
 	float planeSize = 10.0f;
 
 	// This is done here because it depends on the scene
@@ -480,7 +475,7 @@ void render_scene(struct scene *scene)
 	int modelLoc, viewLoc, projectionLoc, channelLoc;
 
 	// Bind to framebuffer so images displayed there rather than screen
-	glBindFramebuffer(GL_FRAMEBUFFER, context->sceneFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	// Makes the sky blue innit
 	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -852,4 +847,30 @@ void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id,
 		break;
 	}
 	std::cout << std::endl << std::endl;
+}
+
+struct texture_fbo *create_texture_fbo() {
+	struct texture_fbo *tfbo = (struct texture_fbo *) malloc(sizeof(struct texture_fbo));
+	if (tfbo == NULL) {
+		exit(EXIT_FAILURE);
+	}
+	
+	/* Create the buffers */
+	glGenBuffers(1, &tfbo->frameBuffer);
+	glGenTextures(1, &tfbo->texture);
+
+	/* Bind texture to buffer */
+	bind_frame_buffer(tfbo->frameBuffer, tfbo->frameBuffer);
+
+	return tfbo;
+}
+
+/* Returns the scene frame buffer stored in the global context */
+GLuint get_scene_fbo() {
+	return context->sceneFBO;
+}
+
+/* Returns the scene texture stored in the global context */
+GLuint get_target_texture() {
+	return context->sceneTexture;
 }
