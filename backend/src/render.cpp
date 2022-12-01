@@ -58,30 +58,30 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
       render_to_screen(context->targetTexture);
     }
     // Renders into sceneFBO where the texture is in sceneTexture
-    render_scene(&scene);
+    // render_scene(&scene);
 
-    for (int i = 0; i < 120; i++) {
-      render_to_screen(context->sceneTexture);
-    }
+    // for (int i = 0; i < 120; i++) {
+    //   render_to_screen(context->sceneTexture);
+    // }
     // Renders into diffFBO where the texture is in diffTexture
-    get_image_mask(context->sceneTexture, context->targetTexture, 0);
-    double error1 = get_mean_pixel_value(context->diffTexture, 0);
-    std::cout << error1 << std::endl;
-    for (int i = 0; i < 120; i++) {
-      render_to_screen(context->diffTexture);
-    }
-    get_image_mask(context->sceneTexture, context->targetTexture, 1);
-    double error2 = get_mean_pixel_value(context->diffTexture, 1);
-    std::cout << error2 << std::endl;
-    for (int i = 0; i < 120; i++) {
-      render_to_screen(context->diffTexture);
-    }
-    get_image_mask(context->sceneTexture, context->targetTexture, 2);
-    double error3 = get_mean_pixel_value(context->diffTexture, 2);
-    std::cout << error3 << std::endl;
-    for (int i = 0; i < 120; i++) {
-      render_to_screen(context->diffTexture);
-    }
+    // get_image_mask(context->sceneTexture, context->targetTexture, 0);
+    // double error1 = get_mean_pixel_value(context->diffTexture, 0);
+    // std::cout << error1 << std::endl;
+    // for (int i = 0; i < 120; i++) {
+    //   render_to_screen(context->diffTexture);
+    // }
+    // get_image_mask(context->sceneTexture, context->targetTexture, 1);
+    // double error2 = get_mean_pixel_value(context->diffTexture, 1);
+    // std::cout << error2 << std::endl;
+    // for (int i = 0; i < 120; i++) {
+    //   render_to_screen(context->diffTexture);
+    // }
+    // get_image_mask(context->sceneTexture, context->targetTexture, 2);
+    // double error3 = get_mean_pixel_value(context->diffTexture, 2);
+    // std::cout << error3 << std::endl;
+    // for (int i = 0; i < 120; i++) {
+    //   render_to_screen(context->diffTexture);
+    // }
 
     // Render to screen for visual debugging
 
@@ -327,15 +327,19 @@ void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel) {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-u_char assign_centroid(unsigned char pixel[3], unsigned char centroids[20][3]) {
-  double closest_distance;
-  u_char closest_centroid;
+inline u_char assign_centroid(unsigned char* pixel_ptr, unsigned char* centroids, int num_centroids) {
+  // Find closest centroid
+  double closest_distance = 0.;
+  for (int s=0; s<3; s++) {
+    closest_distance += pow(static_cast<double>(centroids[s] - pixel_ptr[s]), 2);  
+  }
+  u_char closest_centroid = 0;
 
-  for (int c=0; c<20; c++) {
-    unsigned char centroid[3] = {centroids[c][0], centroids[c][1], centroids[c][2]};
+  for (int c=1; c<num_centroids; c++) {
     double distance = 0.;
+    // Calculate distance to centroid
     for (int s=0; s<3; s++) {
-      distance += pow(static_cast<double>(centroid[s] - pixel[s]), 2);  
+      distance += pow(static_cast<double>(centroids[c*3 + s] - pixel_ptr[s]), 2);  
     }
 
     if (distance < closest_distance) {
@@ -345,6 +349,10 @@ u_char assign_centroid(unsigned char pixel[3], unsigned char centroids[20][3]) {
   }
 
   return closest_centroid;
+}
+
+inline unsigned char* get_pixel(unsigned char* image, int width, int height, int x, int y, int num_channels) {
+  return &image[(y * width + x) * num_channels];
 }
 
 void k_means_clustering(unsigned char* image, int width, int height, int nrChannels) {
@@ -377,24 +385,28 @@ void k_means_clustering(unsigned char* image, int width, int height, int nrChann
     // Assign each pixel to individual centroids
     for (int row=0; row<height; row++) {
       for (int col=0; col<width; col++) {
-        unsigned char pixel[3] = {image[(nrChannels * col) + row * width * nrChannels], image[(nrChannels * col) + row * width * nrChannels + 1], image[(nrChannels * col) + row * width * nrChannels + 2]};
-        size_t centroid = assign_centroid(pixel, centroids);
+        unsigned char* pixel_ptr = get_pixel(image, width, height, col, row, nrChannels);
+        size_t centroid = assign_centroid(pixel_ptr, (unsigned char *) &centroids, num_centroids);
 
         for (int s=0; s<3; s++) {
-          centroid_sums[centroid][s] += pixel[s];
+          centroid_sums[centroid][s] += pixel_ptr[s];
         }
         centroid_counts[centroid] += 1;
       }
     }
 
+
+    // for (int c=0; c<num_centroids; c++) {
+    //   std::cout << c << ": " << static_cast<int>(centroids[c][0]) << " " << static_cast<int>(centroids[c][1]) << " " << static_cast<int>(centroids[c][2]) << ", count: " << centroid_counts[c] << ", average of pixel group: " << static_cast<int>(centroid_sums[c][0]) << " " << static_cast<int>(centroid_sums[c][1]) << " " << static_cast<int>(centroid_sums[c][2]) << std::endl;
+    // }
+
     // Caculate mean for each centroid and reassign
     for (int c=0; c<num_centroids; c++) {
-      for (int s=0; s<3; s++) {
-        centroids[c][s] = static_cast<unsigned char>(static_cast<float>(centroid_sums[c][s]) / static_cast<float>(centroid_counts[c]));
+      if (centroid_counts[c] > 0) {
+        for (int s=0; s<3; s++) {
+          centroids[c][s] = static_cast<unsigned char>(centroid_sums[c][s] / centroid_counts[c]);
+        }
       }
-    }
-    for (int c=0; c<num_centroids; c++) {
-      std::cout << c << ": " << static_cast<int>(centroids[c][0]) << " " << static_cast<int>(centroids[c][1]) << " " << static_cast<int>(centroids[c][2]) << std::endl;
     }
   }
 
@@ -402,10 +414,10 @@ void k_means_clustering(unsigned char* image, int width, int height, int nrChann
   // Write to each pixel its final centroid allocation
   for (int row=0; row<height; row++) {
     for (int col=0; col<width; col++) {
-      unsigned char pixel[3] = {image[(nrChannels * col) + row * width * nrChannels], image[(nrChannels * col) + row * width * nrChannels + 1], image[(nrChannels * col) + row * width * nrChannels + 2]};
-      size_t centroid = assign_centroid(pixel, centroids);
+      unsigned char* pixel_ptr = get_pixel(image, width, height, col, row, nrChannels);
+      size_t centroid = assign_centroid(pixel_ptr, (unsigned char *) &centroids, num_centroids);
       for (int s=0; s<3; s++) {
-        image[(nrChannels * col) + row * width * nrChannels + s] = centroids[centroid][s];
+        pixel_ptr[s] = centroids[centroid][s];
       }
     }
   }
@@ -431,7 +443,6 @@ void set_target_img(const char *str) {
 
   // glFinish();
 
-  // glTexSubImage2D(GL_TEXTURE_2D, )
 }
 
 sceneVertex create_vertex(GLfloat x, GLfloat y, GLfloat z) {
