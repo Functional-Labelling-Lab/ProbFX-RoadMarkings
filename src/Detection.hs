@@ -207,28 +207,14 @@ syntheticBenchmark errFun = do
     -- TODO: Implement
     envToScene :: Env RoadEnv -> Maybe Scene
     envToScene env = run $ runObsReader env $ do
-      -- mX     <- ask @RoadEnv #x
-      -- mY     <- ask @RoadEnv #y
-      -- mZ     <- ask @RoadEnv #z
-      -- mPitch <- ask @RoadEnv #pitch
-      -- mYaw   <- ask @RoadEnv #yaw
-      -- mRoll  <- ask @RoadEnv #roll
-      -- mError <- ask @RoadEnv #error
-
-      mX <- ask @RoadEnv #x
-      let mY = Just 0.2
-      -- mY <- ask @RoadEnv #y
-      let mZ = Just 0
-      -- mZ <- ask @RoadEnv #z
-      let mPitch = Just 0
-      -- mPitch <- ask @RoadEnv #pitch
-      let mYaw = Just 0
-      -- mYaw <- ask @RoadEnv #yaw
-      let mRoll = Just 0
-      -- mRoll <- ask @RoadEnv #roll
-      let mError = Just 0
-      -- mError <- ask @RoadEnv #error
-
+      mX     <- ask @RoadEnv #x
+      mY     <- ask @RoadEnv #y
+      mZ     <- ask @RoadEnv #z
+      mPitch <- ask @RoadEnv #pitch
+      mYaw   <- ask @RoadEnv #yaw
+      mRoll  <- ask @RoadEnv #roll
+      mError <- ask @RoadEnv #error
+      
       return $ case (mX, mY, mZ, mPitch, mYaw, mRoll, mError) of
         (Just x, Just y, Just z, Just pitch, Just yaw, Just roll, Just error) -> Just $ Scene {
           camera = Camera {
