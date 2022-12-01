@@ -633,7 +633,7 @@ void bind_texture(GLuint *texture, std::string &location) {
   unsigned char *data =
       stbi_load(location.c_str(), &width, &height, &nrChannels, 0);
   if (data) {
-    k_means_clustering(data, width, height, nrChannels);
+    k_means_clustering(data, width, height, nrChannels); // TODO: Abstract this into a lambda
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
