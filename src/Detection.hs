@@ -238,10 +238,7 @@ syntheticBenchmark errFun = do
 
     sceneAccuracy :: Scene -> Scene -> Double
     -- POST: 0 <= sceneAccuracy s s' <= 1
-    sceneAccuracy scene scene' = unsafePerformIO $ do
-        print sv
-        print sv'
-        return $ 1 - normalise (0, sqrt n) (euclidian sv sv')
+    sceneAccuracy scene scene' = 1 - normalise (0, sqrt n) (euclidian sv sv')
       where
         n  = fromIntegral $ length sv
         sv = sceneToVec scene
