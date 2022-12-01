@@ -29,7 +29,7 @@ if(NOT WIN32)
 endif()
 
 # Use openGL 4 if true, 3 is false
-set(OGL4 true)
+set(OGL4 false)
 
 if (${OGL4})
     message(STATUS "${Red} Building for OpenGL 4 ${ColourReset}")

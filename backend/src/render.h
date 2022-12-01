@@ -9,10 +9,20 @@
 extern "C" {
 void set_target_img(const char *str);
 
-void render_scene(struct scene *scene);
+void render_scene(struct scene *scene, GLuint FBO);
 double get_mean_pixel_value(GLuint texture, int color);
 void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel);
 struct detected_lines *get_scene_geometry(struct scene *scene);
+
+struct texture_fbo *create_texture_fbo();
+GLuint get_scene_fbo();
+GLuint get_target_texture();
+
+struct texture_fbo {
+  GLuint texture;
+  GLuint frameBuffer;
+};
+
 int test_bed(const char *str, double x, double y, double z, double pitch, double yaw,
              double roll);
 

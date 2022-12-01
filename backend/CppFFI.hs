@@ -4,26 +4,36 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
 
-module CppFFI (
-    Scene(..),
-    Camera(..),
-    renderScene,
-    setTargetImg,
-    testBed,
-    getMeanPixelValue,
-    findTextureDifference,
-    getHoughLines,
-    getSceneLines,
-    Point,
-    Line
-  ) where
+module CppFFI ( Scene(..)
+              , Camera(..)
+              , renderScene
+              , setTargetImg
+              , testBed
+              , getMeanPixelValue
+              , findTextureDifference
+              , createTextureFBO
+              , TextureFBO(..)
+              , GLuint
+              , Texture
+              , FrameBuffer
+              , getSceneFBO
+              , getTargetTexture
+              , Line
+              , Point
+              , getHoughLines
+              , getSceneLines
+              , screenBuffer) where
 
 import           Foreign
 import           Foreign.C.String
-import           Foreign.C.Types   (CChar, CInt)
+import           Foreign.C.Types   (CChar, CInt, CUInt(..))
 import           Foreign.CStorable (CStorable (..))
 import           GHC.Generics      (Generic (..))
 import           GHC.IO            (unsafePerformIO)
+
+type GLuint = CUInt
+type Texture = GLuint
+type FrameBuffer = GLuint
 
 data Camera = Camera
   { x     :: Double
@@ -40,6 +50,17 @@ instance Storable Camera where
   alignment = cAlignment
   sizeOf    = cSizeOf
 
+data TextureFBO = TextureFBO
+    { texture :: Texture
+    , frameBuffer :: FrameBuffer
+    } deriving (Generic, CStorable, Show)
+
+instance Storable TextureFBO where
+    sizeOf    = cSizeOf
+    alignment = cAlignment
+    poke      = cPoke
+    peek      = cPeek
+
 data Scene = Scene
     { camera :: Camera
     } deriving (Generic, CStorable, Show)
@@ -52,6 +73,9 @@ instance Storable Scene where
 
 type Point = (Int, Int)
 type Line = (Point, Point)
+
+screenBuffer :: FrameBuffer
+screenBuffer = 0
 
 extractHoughLines :: HoughLine -> Line
 extractHoughLines (HoughLine sx sy ex ey)
@@ -82,19 +106,25 @@ instance Storable DetectedLines where
   peek = cPeek
 
 -- Test bed for demoing pipeline
-foreign import ccall unsafe "test_bed_c" testBed :: CString -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
+foreign import ccall unsafe "test_bed_c" rawTestBed :: CString -> Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
+testBed :: String -> Scene -> IO Int32
+testBed s Scene {camera=scene}
+  = do
+    s' <- newCString s
+    rawTestBed s' (x scene) (y scene) (z scene) (pitch scene) (yaw scene) (roll scene)
 
--- Backing calls for error functions
-foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
-foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
+-- Rendering a scene to a framebuffer
+foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> FrameBuffer -> IO ()
+
+-- Setting the target image
+foreign import ccall unsafe "set_target_img_c" rawSetTargetImg :: CString -> IO ()
+setTargetImg :: String -> IO ()
+setTargetImg s = newCString s >>= rawSetTargetImg
+
+-- Get the mean pixel value
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double
 foreign import ccall unsafe "find_texture_difference_c" findTextureDifference :: Int32 -> IO ()
-
-foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
 foreign import ccall unsafe "scene_lines_c" rawSceneLines :: Ptr Scene -> IO (Ptr DetectedLines)
-
--- By default Haskell's free uses C's free, but we use C's directly for a guarantee
-foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
 
 getSceneLines :: Scene -> [Line]
 getSceneLines s = unsafePerformIO $ do
@@ -119,6 +149,8 @@ getSceneLines s = unsafePerformIO $ do
 
   return lines
 
+-- Get the lines from an image using the probabilistic hough transform
+foreign import ccall unsafe "hough_lines_c" rawHoughLines :: CString -> IO (Ptr DetectedLines)
 getHoughLines :: String -> [Line]
 getHoughLines path = unsafePerformIO $ withCString path $ \c_path ->
   do
@@ -135,3 +167,17 @@ getHoughLines path = unsafePerformIO $ withCString path $ \c_path ->
     c_free rawPtr
 
     return lines
+
+-- By default Haskell's free uses C's free, but we use C's directly for a guarantee
+foreign import ccall "stdlib.h free" c_free :: Ptr a -> IO ()
+
+-- TODO: upgrade for channels
+foreign import ccall unsafe "create_texture_fbo_c" rawCreateTextureFBO :: IO (Ptr TextureFBO)
+createTextureFBO :: IO TextureFBO
+createTextureFBO = rawCreateTextureFBO >>= peek
+
+-- TODO: upgrade for channels
+foreign import ccall unsafe "get_scene_fbo_c" getSceneFBO :: IO FrameBuffer
+
+-- TODO: upgrade for channels
+foreign import ccall unsafe "get_target_texture_c" getTargetTexture :: IO Texture

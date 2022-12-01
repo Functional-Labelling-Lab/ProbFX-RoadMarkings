@@ -9,9 +9,9 @@ void check_context() {
   }
 }
 
-void render_scene_c(struct scene *scene) {
+void render_scene_c(struct scene *scene, GLuint FBO) {
   check_context();
-  render_scene(scene);
+  render_scene(scene, FBO);
 }
 void set_target_img_c(const char *str) {
   check_context();
@@ -40,4 +40,18 @@ detected_lines_t *hough_lines_c(const char *str) {
 detected_lines_t *scene_lines_c(struct scene *scene) {
   check_context();
   return get_scene_geometry(scene);
+}
+struct texture_fbo *create_texture_fbo_c() {
+	check_context();
+	return create_texture_fbo();
+}
+
+GLuint get_scene_fbo_c() {
+	check_context();
+	return get_scene_fbo();
+}
+
+GLuint get_target_texture_c() {
+	check_context();
+	return get_target_texture();
 }
