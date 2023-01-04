@@ -51,7 +51,7 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
   scene.camera.roll = roll;
 
   // Seperate Load img function
-  set_target_img("/backend/src/images/real_road.jpg");
+  set_target_img("/backend/src/images/real_road.jpg", false);
 
   while (!glfwWindowShouldClose(context->window)) {
     for (int i = 0; i < 120; i++) {
@@ -60,28 +60,28 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
     // Renders into sceneFBO where the texture is in sceneTexture
     // render_scene(&scene);
 
-    // for (int i = 0; i < 120; i++) {
-    //   render_to_screen(context->sceneTexture);
-    // }
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->sceneTexture);
+    }
     // Renders into diffFBO where the texture is in diffTexture
-    // get_image_mask(context->sceneTexture, context->targetTexture, 0);
-    // double error1 = get_mean_pixel_value(context->diffTexture, 0);
-    // std::cout << error1 << std::endl;
-    // for (int i = 0; i < 120; i++) {
-    //   render_to_screen(context->diffTexture);
-    // }
-    // get_image_mask(context->sceneTexture, context->targetTexture, 1);
-    // double error2 = get_mean_pixel_value(context->diffTexture, 1);
-    // std::cout << error2 << std::endl;
-    // for (int i = 0; i < 120; i++) {
-    //   render_to_screen(context->diffTexture);
-    // }
-    // get_image_mask(context->sceneTexture, context->targetTexture, 2);
-    // double error3 = get_mean_pixel_value(context->diffTexture, 2);
-    // std::cout << error3 << std::endl;
-    // for (int i = 0; i < 120; i++) {
-    //   render_to_screen(context->diffTexture);
-    // }
+    get_image_mask(context->sceneTexture, context->targetTexture, 0);
+    double error1 = get_mean_pixel_value(context->diffTexture, 0);
+    std::cout << error1 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
+    get_image_mask(context->sceneTexture, context->targetTexture, 1);
+    double error2 = get_mean_pixel_value(context->diffTexture, 1);
+    std::cout << error2 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
+    get_image_mask(context->sceneTexture, context->targetTexture, 2);
+    double error3 = get_mean_pixel_value(context->diffTexture, 2);
+    std::cout << error3 << std::endl;
+    for (int i = 0; i < 120; i++) {
+      render_to_screen(context->diffTexture);
+    }
 
     // Render to screen for visual debugging
 
@@ -169,7 +169,7 @@ void init_context() {
   // Stage two buffer (image_diffrence)
   bind_frame_buffer(context->diffFBO, context->diffTexture);
 
-  float target_colors[3][3] = { { 0. / 255., 0. / 255., 0. / 255. },
+  float target_colors[3][3] = { { 25.5 / 255., 25.5 / 255., 25.5 / 255. },
                                 { 0. / 255., 255. / 255., 0. / 255. },
                                 { 0. / 255., 0. / 255., 255. / 255. } };
 
@@ -356,7 +356,7 @@ inline unsigned char* get_pixel(unsigned char* image, int width, int height, int
 }
 
 void k_means_clustering(unsigned char* image, int width, int height, int nrChannels) {
-  const int num_centroids = 20;
+  const int num_centroids = 3;
 
   // Centroid buffer
   unsigned char centroids[num_centroids][3];
@@ -396,9 +396,9 @@ void k_means_clustering(unsigned char* image, int width, int height, int nrChann
     }
 
 
-    // for (int c=0; c<num_centroids; c++) {
-    //   std::cout << c << ": " << static_cast<int>(centroids[c][0]) << " " << static_cast<int>(centroids[c][1]) << " " << static_cast<int>(centroids[c][2]) << ", count: " << centroid_counts[c] << ", average of pixel group: " << static_cast<int>(centroid_sums[c][0]) << " " << static_cast<int>(centroid_sums[c][1]) << " " << static_cast<int>(centroid_sums[c][2]) << std::endl;
-    // }
+    for (int c=0; c<num_centroids; c++) {
+      std::cout << c << ": " << static_cast<int>(centroids[c][0]) << " " << static_cast<int>(centroids[c][1]) << " " << static_cast<int>(centroids[c][2]) << ", count: " << centroid_counts[c] << ", average of pixel group: " << static_cast<int>(centroid_sums[c][0]) << " " << static_cast<int>(centroid_sums[c][1]) << " " << static_cast<int>(centroid_sums[c][2]) << std::endl;
+    }
 
     // Caculate mean for each centroid and reassign
     for (int c=0; c<num_centroids; c++) {
@@ -423,25 +423,27 @@ void k_means_clustering(unsigned char* image, int width, int height, int nrChann
   }
 }
 
-void set_target_img(const char *str) {
+void set_target_img(const char *str, bool preprocess) {
   context->targetTexture = load_texture(str);
-  
-  // glActiveTexture(GL_TEXTURE0);
-  // glBindImageTexture(0, context->targetTexture, 0, false, 0, GL_READ_WRITE,
-  //                    GL_RGBA32F);
 
-  // glUseProgram(context->knnShader);
+  if (preprocess) {
+    glActiveTexture(GL_TEXTURE0);
+    glBindImageTexture(0, context->targetTexture, 0, false, 0, GL_READ_WRITE,
+                      GL_RGBA32F);
 
-  // int targetColors = glGetUniformLocation(context->knnShader, "targetColors");
+    glUseProgram(context->knnShader);
 
-  // // Render ground
-  // // Set channel to 1
-  // glUniform1fv(targetColors, 9, *context->target_colors);
+    int targetColors = glGetUniformLocation(context->knnShader, "targetColors");
 
-  // // We then run the compute shader
-  // glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
+    // Render ground
+    // Set channel to 1
+    glUniform1fv(targetColors, 9, *context->target_colors);
 
-  // glFinish();
+    // We then run the compute shader
+    glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
+
+    glFinish();
+  }
 
 }
 
@@ -633,7 +635,7 @@ void bind_texture(GLuint *texture, std::string &location) {
   unsigned char *data =
       stbi_load(location.c_str(), &width, &height, &nrChannels, 0);
   if (data) {
-    k_means_clustering(data, width, height, nrChannels); // TODO: Abstract this into a lambda
+    // k_means_clustering(data, width, height, nrChannels); // TODO: Abstract this into a lambda
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB,
                  GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);

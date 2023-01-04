@@ -7,7 +7,7 @@ uniform float targetColors[3 * 3];
 vec3 max(vec3 color) {
     if (color.r >= color.b) {
         if (color.r >= color.g) {
-            return vec3(0., 0., 0);
+            return vec3(0.1, 0.1, 0.1);
         } else {
             return vec3(0., 1., 0);
         }

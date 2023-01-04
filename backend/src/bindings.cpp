@@ -15,7 +15,7 @@ void render_scene_c(struct scene *scene) {
 }
 void set_target_img_c(const char *str) {
   check_context();
-  set_target_img(str);
+  set_target_img(str, true);
 }
 int test_bed_c(double x, double y, double z, double pitch, double yaw,
                double roll) {

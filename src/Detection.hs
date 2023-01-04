@@ -46,16 +46,16 @@ initRoadSample = do
     x <- uniform @env (-0.5) 0.5 #x
     y <- uniform @env (0.05) 0.5 #y
     z <- uniform @env (-0.5) 0.5 #z
-    pitch <- uniform @env (-0.2) 0.2 #pitch
-    yaw <- uniform @env (-0.2) 0.2 #yaw
-    roll <- uniform @env (-0.2) 0.2 #roll
+    pitch <- uniform @env (-0.3) 0.3 #pitch
+    yaw <- uniform @env (-0.3) 0.3 #yaw
+    roll <- uniform @env (-0.3) 0.3 #roll
 
-    return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=0.0, roll=roll} }
+    return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=yaw, roll=roll} }
 
 roadGenerationModel :: forall env sig m. (Observables env ["x", "y", "z", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m) => m ()
 roadGenerationModel = do
     roadSample <- initRoadSample @env
-    error <- normal @env (errorFunction roadSample) 50 #error
+    error <- normal @env (errorFunction roadSample) 8 #error
     return ()
 
 --- Main code
@@ -95,7 +95,7 @@ trainModel = do
         let mh_env :: Env RoadEnv
             mh_env = (#x := []) <:> (#y := []) <:> (#z := []) <:> (#pitch := []) <:> (#yaw := []) <:> (#roll := []) <:> (#error := repeat 0) <:> nil
 
-        traceMHs <- mh 1000 (roadGenerationModel @RoadEnv) mh_env ["x", "y", "z", "pitch", "roll"]
+        traceMHs <- mh 500 (roadGenerationModel @RoadEnv) mh_env ["x", "y", "z", "pitch", "roll", "yaw"]
 
         let xs = concatMap (get #x) traceMHs
         let ys = concatMap (get #y) traceMHs

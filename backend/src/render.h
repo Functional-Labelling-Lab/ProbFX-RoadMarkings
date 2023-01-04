@@ -6,7 +6,7 @@
 #include <string>
 
 extern "C" {
-void set_target_img(const char *str);
+void set_target_img(const char *str, bool preprocess);
 
 void render_scene(struct scene *scene);
 double get_mean_pixel_value(GLuint texture, int color);
