@@ -146,17 +146,20 @@ trainModel image = do
 --     print err
 
 
-data Args = Benchmark { outputPath :: String }
+data Args = Benchmark { outputPath :: String, seed :: Int, runs :: Int }
         | Run { inputPath :: String, outputPath :: String } deriving (Show, Data, Typeable)
 
 inputPathMsg x = x &= help "Input path folder" &= opt "input"
 outputPathMsg x = x &= help "Output path folder" &= opt "output"
+seedMsg x = x &= help "Random seed for benchmark" &= opt "seed"
+runsMsg x = x &= help "Number of runs for benchmark" &= opt "runs"
 
-benchmark = Benchmark { outputPath = outputPathMsg def }
+
+benchmark = Benchmark { outputPath = outputPathMsg def, seed = seedMsg def, runs = runsMsg def }
 run = Run { inputPath = inputPathMsg def, outputPath = outputPathMsg def }
 
-runBenchmark :: String -> IO ()
-runBenchmark output = do
+runBenchmark :: String -> Int -> Int -> IO ()
+runBenchmark output seed runs = do
     putStrLn "Benchmarking"
     putStrLn output
 
@@ -205,7 +208,7 @@ getImagesInPath name = do
     return images
 
 execute :: Args -> IO ()
-execute (Benchmark outputPath) = runBenchmark outputPath
+execute (Benchmark outputPath seed runs) = runBenchmark outputPath seed runs
 execute (Run inputPath outputPath) = runRoadMarkings inputPath outputPath
 
 mode :: Mode (CmdArgs Args)
