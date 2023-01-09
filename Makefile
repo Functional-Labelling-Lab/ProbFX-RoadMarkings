@@ -1,13 +1,19 @@
-.PHONY: clean build run
+.PHONY: clean build run bench
 
 cpp_dir = backend
 bold_magenta = \033[0;35m
 reset_col = \033[0m
+benchmark_prog = benchmark.py
 
 all: build
 
+bench: build
+	@printf "$(bold_magenta)>> Running Benchmark Suite <<$(reset_col)"
+	@printf "$(bold_magenta)>> python3 version 3.10+   <<$(reset_col)"
+	python3 $(benchmark_prog)
+
 run: build
-	@printf ">> Running cabal side      <<"
+	@printf "$(bold_magenta)>> Running cabal side      <<$(reset_col)"
 	cabal run
 
 build:

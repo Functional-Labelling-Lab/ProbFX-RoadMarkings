@@ -4,7 +4,7 @@
 
 module CppFFI (Scene(..), Camera(..), renderScene, 
                 setTargetImg, testBed, getMeanPixelValue,
-                findTextureDifference, getHoughLines,
+                findTextureDifference, getHoughLines, saveScene,
                 Point, Line
                 ) where
 
@@ -73,6 +73,7 @@ instance Storable DetectedLines where
     peek = cPeek
 
 foreign import ccall unsafe "render_scene_c" renderScene :: Ptr Scene -> IO ()
+foreign import ccall unsafe "save_scene_c" saveScene :: Ptr Scene -> CString -> IO ()
 foreign import ccall unsafe "set_target_img_c" setTargetImg :: CString -> IO ()
 foreign import ccall unsafe "test_bed_c" testBed :: Double -> Double -> Double -> Double -> Double -> Double -> IO Int32
 foreign import ccall unsafe "get_mean_pixel_value_c" getMeanPixelValue :: Int32 -> IO Double

@@ -1,6 +1,6 @@
 source-repository-package
     type: git
     location: https://github.com/Functional-Labelling-Lab/ProbFX.git
-    tag: ba53faf6e7002b0a9304b6da38735ac5d5cd726c
+    tag: fe34e27e2c130fcff7e93239e3ef2fa9653aff5d
 
 packages: ./

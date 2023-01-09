@@ -15,6 +15,8 @@ void get_image_mask(GLuint texture1, GLuint texture2, GLuint channel);
 int test_bed(double x, double y, double z, double pitch, double yaw,
              double roll);
 
+void save_scene(const char *str, struct scene *scene, GLuint texture);
+
 struct scene {
   struct camera {
     double x;

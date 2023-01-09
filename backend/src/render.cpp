@@ -17,6 +17,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.h"
 
@@ -690,6 +693,30 @@ void bind_diff_vertex_atts(GLuint VAO, GLuint VBO, GLuint EBO, float *vertices,
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+}
+
+void save_scene(const char *filename, struct scene *scene, GLuint texture) {
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, texture);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  render_scene(scene);
+
+  // Checking the size of the pixel
+  int compress_depth = 0;
+  int mipmapLevelWidth = -1, mipmapLevelHeight = -1;
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_WIDTH,
+                           &mipmapLevelWidth);
+  glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT,
+                           &mipmapLevelHeight);
+  // std::cout << mipmapLevelWidth << std::endl;
+  // std::cout << mipmapLevelHeight << std::endl;
+
+  // Times by 3 for RGB
+  int *pixels = new int[mipmapLevelWidth * mipmapLevelHeight * 3];
+
+  glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+  stbi_write_png(filename, mipmapLevelWidth, mipmapLevelHeight, 3, pixels, 3 * mipmapLevelWidth);
 }
 
 void terminate_context() {

@@ -1,6 +1,7 @@
 #include "bindings.h"
 #include "hough.h"
 #include "render.h"
+#include <iostream>
 extern opengl_context *context;
 
 void check_context() {
@@ -12,6 +13,11 @@ void check_context() {
 void render_scene_c(struct scene *scene) {
   check_context();
   render_scene(scene);
+}
+void save_scene_c(struct scene *scene, const char *str) {
+  std::cout << "hello" << std::endl;
+  check_context();
+  save_scene(str, scene, context->sceneTexture);
 }
 void set_target_img_c(const char *str) {
   check_context();
