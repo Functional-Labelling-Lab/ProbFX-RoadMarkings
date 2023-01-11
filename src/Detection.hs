@@ -9,11 +9,28 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS_GHC -fno-cse #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use fewer imports" #-}
 
-import Model ( Model, normal, uniform )
+--- Language Extensions & Imports
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+{-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_GHC -fno-cse #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use fewer imports" #-}
+import Model ( Model, normal, uniform, normal' )
 import Env ( Env, Observables, Assign((:=)), (<:>), nil, get )
 import Inference.MH ( mh, mhRaw )
-import Sampler ( sampleIO, liftS )
+import Sampler ( sampleIO, liftS, Sampler, sampleIOCustom )
 import Control.Algebra (Has)
 import System.Console.CmdArgs(CmdArgs, (&=), def, help, opt, modes, summary, cmdArgs, cmdArgsMode, Mode, program, cmdArgsRun)
 
@@ -23,12 +40,25 @@ import CppFFI
 import Foreign
     ( Storable(..), StablePtr(..), Int32, malloc, Storable(poke) )
 import Foreign.Marshal.Alloc
-import OpenSum (Member)
+import System.IO.Unsafe ( unsafePerformIO )
+import Hough ( compareLines, compareLines )
+import Foreign.C (CString)
 import System.IO.Unsafe
-import System.Directory(getDirectoryContents)
-import Hough (compareLines)
-import Data.Data
-import Control.Monad (replicateM, zipWithM)
+import Model (Model, uniform, normal)
+import Sampler (sampleIO, liftS, sampleIOCustom, Sampler)
+import Inference.SIM (simulate)
+import Inference.MH (mh)
+import Control.Effect.ObsReader (ask)
+import Control.Carrier.ObsReader (runObsReader)
+import Control.Algebra (run, Has)
+import Data.Maybe (fromJust)
+import Text.Read (readMaybe)
+import Control.Monad (join, zipWithM)
+import System.Console.CmdArgs.Implicit (Data)
+import System.Console.CmdArgs (Typeable)
+import System.Directory.Internal.Prelude (replicateM)
+import System.Directory (getDirectoryContents)
+import GHC.OldList (zip4)
 
 clamp :: (Double, Double) -> Double -> Double
 clamp (a, b) = min b . max a
@@ -43,38 +73,38 @@ type RoadEnv =
   , "y"         := Double
   , "z"         := Double
   , "pitch"     := Double
-  , "yaw"       := Double
   , "roll"      := Double
+  , "yaw"      := Double
   , "error"     := Double
  ]
 
 xRange, yRange, zRange, pitchRange, yawRange, rollRange :: (Double, Double)
-xRange = (-0.5, 0.5)
-yRange = (0.05, 0.5)
-zRange = (-0.5, 0.5)
-pitchRange = (-0.2, 0.2)
-yawRange = (-0.2, 0.2)
-rollRange = (-0.2, 0.2)
+xRange = (0, 0.05)
+yRange = (0.15, 0.05)
+zRange = (0, 0.05)
+pitchRange = (0, 0.05)
+yawRange = (0, 0.05)
+rollRange = (0, 0.05)
 
 emptyRoadEnv :: Env RoadEnv
-emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #yaw := [] <:> #roll := [] <:> #error := repeat 0 <:> nil
+emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #roll := [] <:> #yaw := [] <:> #error := repeat 0 <:> nil
 
 
-initRoadSample :: forall env sig m. (Observables env '["x", "y", "z", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m) => m Scene
+initRoadSample :: (Observables env '["x", "y", "z", "pitch", "roll", "yaw"] Double) => Model env sig m Scene
 initRoadSample = do
-  x     <- uniform @env (fst xRange) (snd xRange) #x
-  y     <- uniform @env (fst yRange) (snd yRange) #y
-  z     <- uniform @env (fst zRange) (snd zRange) #z
-  pitch <- uniform @env (fst pitchRange) (snd pitchRange) #pitch
-  yaw   <- uniform @env (fst yawRange) (snd yawRange) #yaw
-  roll  <- uniform @env (fst rollRange) (snd rollRange) #roll
-  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=0.0, roll=roll} }
+  x <- uniform (-0.5) 0.5 #x
+  y <- uniform 0.05 0.5 #y
+  z <- uniform (-0.5) 0.5 #z
+  pitch <- uniform (-0.3) 0.3 #pitch
+  yaw <- uniform (-0.3) 0.3 #yaw
+  roll <- uniform (-0.3) 0.3 #roll
+  return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=yaw, roll=roll} }
 
 
-roadGenerationModel :: forall env sig m. (Observables env ["x", "y", "z", "pitch", "yaw", "roll", "error"] Double, Has (Model env) sig m) => m ()
+roadGenerationModel :: (Observables env ["x", "y", "z", "pitch", "roll", "yaw", "error"] Double) => Model env sig m ()
 roadGenerationModel = do
-    roadSample <- initRoadSample @env
-    error <- normal @env (errorFunction roadSample) 50 #error
+    roadSample <- initRoadSample
+    error <- normal (errorFunction roadSample) 20 #error
     return ()
 
 --- Main code
@@ -102,49 +132,34 @@ errorFunction s = unsafePerformIO $ do
 testBedExample :: IO Int32
 testBedExample = testBed 0.11319984526740867 0.3784490271439612 0.0 (-0.1) 0.0 0.0
 
+sampleNormal :: Double -> Model env sig m Double
+sampleNormal mean = normal' mean 0.1
+
 --- Run training loop
-trainModel :: FilePath -> IO (Scene, Double)
-trainModel image = do
+trainModel :: FilePath -> Int -> IO (Scene, Double)
+trainModel image seed = do
     print image
     string <- newCString image
     setTargetImg string
 
-    sampleIO $ do
+    sampleIOCustom seed $ do
 
         let mh_env :: Env RoadEnv
-            mh_env = (#x := []) <:> (#y := []) <:> (#z := []) <:> (#pitch := []) <:> (#yaw := []) <:> (#roll := []) <:> (#error := repeat 0) <:> nil
+            mh_env = (#x := []) <:> (#y := []) <:> (#z := []) <:> (#pitch := []) <:> (#roll := []) <:> (#yaw := []) <:> (#error := repeat 0) <:> nil
 
-        traceMHs <- mh 1000 (roadGenerationModel @RoadEnv) mh_env ["x", "y", "z", "pitch", "roll", "yaw", "error"]
+        -- let mhTrans :: Env RoadEnv
+        -- let mhTrans = (#x := sampleNormal) <:> (#y := sampleNormal) <:> (#z := sampleNormal) <:> (#pitch := sampleNormal) <:> (#roll := sampleNormal) <:> nil
+
+        traceMHs <- mh 500 (roadGenerationModel @RoadEnv) mh_env nil nil
 
         let xs = concatMap (get #x) traceMHs
         let ys = concatMap (get #y) traceMHs
         let pitches = concatMap (get #pitch) traceMHs
         let zs = concatMap (get #z) traceMHs
-        let yaws = concatMap (get #yaw) traceMHs
         let rolls = concatMap (get #roll) traceMHs
-        let errors = concatMap (get #error) traceMHs
+        let yaws = concatMap (get #yaw) traceMHs
 
         return (Scene {camera = Camera {x=head xs, y=head ys, pitch=head pitches, z=head zs, yaw=head yaws, roll=head rolls}}, 0.0)
-
-        -- liftS $ print $ take 10 xs
-        -- liftS $ print $ take 10 ys
-        -- liftS $ print $ take 10 pitches
-        -- liftS $ print $ take 10 zs
-        -- liftS $ print $ take 10 yaws
-        -- liftS $ print $ take 10 rolls
-
-        -- liftS $ print =<< (testBed (head xs) (head ys) (head zs) (head pitches) (0.0) (head rolls))
-        -- liftS $ print $ take 10 errors
-        -- liftS $ print $ (length xs)
-        -- liftS $ print $ ((fromIntegral (length xs)) / 100.0)
-
-
--- main = do
---     let imgHls = getHoughLines "data/road.jpg"
---     let err = compareLines imgHls [((0, 0), (0, 50)), ((20, 0), (20, 50))] (560, 315)
---     print imgHls
---     print err
-
 
 data Args = Benchmark { outputPath :: String, seed :: Int, runs :: Int }
         | Run { inputPath :: String, outputPath :: String } deriving (Show, Data, Typeable)
@@ -154,14 +169,109 @@ outputPathMsg x = x &= help "Output path folder" &= opt "output"
 seedMsg x = x &= help "Random seed for benchmark" &= opt "seed"
 runsMsg x = x &= help "Number of runs for benchmark" &= opt "runs"
 
+syntheticBenchmark :: String -> Int -> Int -> IO (Scene, Scene, Double)
+syntheticBenchmark output run seed = do
 
-benchmark = Benchmark { outputPath = outputPathMsg def, seed = seedMsg def, runs = runsMsg def }
-run = Run { inputPath = inputPathMsg def, outputPath = outputPathMsg def }
+  benchmark run seed
+
+  where
+
+    benchmark :: Int -> Int -> IO (Scene, Scene, Double)
+    benchmark seed run = do
+      -- Create a scene to try and run the algorithm on.
+      (scene, _) <- sampleIOCustom (seed + run) $ simulate emptyRoadEnv (initRoadSample @RoadEnv)
+
+      let name = output ++ "/" ++ show run ++ ".png"
+      saveScenes output [("/" ++ show run ++ ".png", scene)]
+
+      -- Render this scene into an image
+      sceneMal <- malloc
+      poke sceneMal scene
+      renderScene sceneMal
+      free sceneMal
+
+      -- Use mh to work backwards to the origional scene
+      (predictedScene, _) <- trainModel name (seed + 21577)
+
+      -- get accuracy
+      let accuracy = sceneAccuracy scene predictedScene
+      saveScenes output [("/" ++ show run ++ "_out.png", predictedScene)]
+
+      return (scene, predictedScene, accuracy)
+
+    -- TODO: Implement
+    -- envToScene :: Env RoadEnv -> Maybe Scene
+    envToScene env = Control.Algebra.run $ runObsReader env $ do
+      mX     <- ask @RoadEnv #x
+      mY     <- ask @RoadEnv #y
+      mZ     <- ask @RoadEnv #z
+      mPitch <- ask @RoadEnv #pitch
+      mRoll  <- ask @RoadEnv #roll
+
+      return $ case (mX, mY, mZ, mPitch, mRoll) of
+        (Just x, Just y, Just z, Just pitch, Just roll) -> Just $ Scene {
+          camera = Camera {
+              x = x,
+              y = y,
+              z = z,
+              pitch = pitch,
+              yaw = 0.0,
+              roll = roll
+          }
+        }
+        _ -> Nothing
+
+    sceneAccuracy :: Scene -> Scene -> Double
+    -- POST: 0 <= sceneAccuracy s s' <= 1
+    sceneAccuracy scene scene' = 1 - normalise (0, sqrt n) (euclidian sv sv')
+      where
+        n  = fromIntegral $ length sv
+        sv = sceneToVec scene
+        sv' = sceneToVec scene'
+
+    normalise :: (Double, Double) -> Double -> Double
+    -- PRE: lower <= value <= upper
+    -- POST: 0 <= normalise (lower, upper) value <= 1
+    -- POST: a < b => normalise (l, u) a < normalise (l, u) b
+    normalise (lower, upper) value = (value - lower) / (upper - lower)
+
+    euclidian :: Floating a => [a] -> [a] -> a
+    euclidian xs ys = sqrt $ sum $ zipWith (\x y -> (x - y) ^ 2) xs ys
+
+    sceneToVec :: Scene -> [Double]
+    sceneToVec scene = zipWith normalise
+      [xRange, yRange, zRange, pitchRange, yawRange, rollRange]
+      (map ($ camera scene) [x, y, z, pitch, yaw, roll])
+
+
+serializeBenchmarks :: [(String, Scene, Scene, Double)] -> String
+serializeBenchmarks results = concat outStr
+    where
+        lines = map (\(name, Scene {
+            camera = Camera { x = target_x, y = target_y, z = target_z,  yaw = target_yaw, pitch = target_pitch, roll = target_roll}
+        }, Scene {
+            camera = Camera { x = generated_x, y = generated_y, z = generated_z,  yaw = generated_yaw, pitch = generated_pitch, roll = generated_roll}
+            }, error) ->
+                name ++ "," ++ show target_x ++ "," ++ show target_y ++ "," ++ show target_z ++ "," ++ show target_pitch ++ "," ++ show target_yaw ++ "," ++ show target_roll ++ ","
+                ++ show generated_x ++ "," ++ show generated_y ++ "," ++ show generated_z ++ "," ++ show generated_pitch ++ "," ++ show generated_yaw ++ "," ++ show generated_roll ++ "," ++ show error ++ "\n") results
+        outStr = "name,target_x,target_y,target_z,target_pitch,target_yaw,target_roll,generated_x,generated_y,generated_z,generated_pitch,generated_yaw,generated_roll,error\n" : lines
+
+
 
 runBenchmark :: String -> Int -> Int -> IO ()
 runBenchmark output seed runs = do
     putStrLn "Benchmarking"
-    putStrLn output
+    results <- mapM (syntheticBenchmark output seed) [0..runs]
+    let (scenes, predictedScenes, accuracies) = unzip3 results
+
+    let outputString = serializeBenchmarks (zip4 (map show [0..runs]) scenes predictedScenes accuracies)
+
+    writeFile (output ++ "/results.csv") outputString
+
+
+
+    return ()
+
 
 runRoadMarkings :: String -> String -> IO ()
 runRoadMarkings input output  = do
@@ -170,25 +280,25 @@ runRoadMarkings input output  = do
     files <- getImagesInPath input
     let filePaths = map (\x -> input ++ "/" ++ x) files
 
-    parameters <- mapM trainModel filePaths
+    parameters <- mapM (`trainModel` 0) filePaths
     let (params, errors) = unzip parameters
 
     let zipped = zip3 files params errors
 
     saveScenes output (zip files params)
 
-    outputString <- serializeResults zipped
+    let outputString = serializeResults zipped
 
-    writeFile (output ++ "results.csv") outputString
+    writeFile (output ++ "/results.csv") outputString
 
 
 
-serializeResults :: [(String, Scene, Double)] -> IO String
-serializeResults results = do
-    let lines = map (\(name, Scene {camera = Camera { x, y, z, yaw, pitch, roll}}, error) -> name ++ "," ++ show x ++ "," ++ show y ++ "," ++ show z ++ "," ++ show pitch ++ "," ++ show yaw ++ "," ++ show roll ++ "," ++ show error ++ "\n") results
-    let outStr = "name,x,y,z,pitch,yaw,roll,error\n" : lines
 
-    return $ concat outStr
+serializeResults :: [(String, Scene, Double)] -> String
+serializeResults results = concat outStr
+    where
+        lines = map (\(name, Scene {camera = Camera { x, y, z, yaw, pitch, roll}}, error) -> name ++ "," ++ show x ++ "," ++ show y ++ "," ++ show z ++ "," ++ show pitch ++ "," ++ show yaw ++ "," ++ show roll ++ "," ++ show error ++ "\n") results
+        outStr = "name,x,y,z,pitch,yaw,roll,error\n" : lines
 
 
 
@@ -213,6 +323,9 @@ execute (Run inputPath outputPath) = runRoadMarkings inputPath outputPath
 
 mode :: Mode (CmdArgs Args)
 mode = cmdArgsMode $ modes [benchmark,run] &= help "Build helper program" &= program "maker" &= summary "Maker v1.0\nMake it"
+    where
+        benchmark = Benchmark { outputPath = outputPathMsg def, seed = seedMsg def, runs = runsMsg def }
+        run = Run { inputPath = inputPathMsg def, outputPath = outputPathMsg def }
 
 main :: IO ()
 main = do
@@ -220,7 +333,7 @@ main = do
     execute args
 
 -- main :: IO Int32
--- main = testBedExample
+-- main = saveScenes "./" [("0.png", Scene {camera = Camera {x = 0.07, y = 0.15, z = 0.1, yaw = 0.05, pitch = -0.15, roll = 0.0}})]
 
 
 -- Functions:

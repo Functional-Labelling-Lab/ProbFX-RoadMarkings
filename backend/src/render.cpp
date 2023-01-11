@@ -429,6 +429,8 @@ void k_means_clustering(unsigned char* image, int width, int height, int nrChann
 void set_target_img(const char *str, bool preprocess) {
   context->targetTexture = load_texture(str);
 
+  render_to_screen(context->targetTexture);
+
   if (preprocess) {
     glActiveTexture(GL_TEXTURE0);
     glBindImageTexture(0, context->targetTexture, 0, false, 0, GL_READ_WRITE,
@@ -446,6 +448,35 @@ void set_target_img(const char *str, bool preprocess) {
     glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
 
     glFinish();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, context->targetTexture);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    int compress_depth = 0;
+    int mipmapLevelWidth = -1, mipmapLevelHeight = -1;
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_WIDTH,
+                            &mipmapLevelWidth);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, compress_depth, GL_TEXTURE_HEIGHT,
+                            &mipmapLevelHeight);
+
+
+    char *pixels = new char[mipmapLevelWidth * mipmapLevelHeight * 3];
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+  
+    glFinish();           
+    
+    for (int j=0; j<mipmapLevelHeight / 2; j++) {
+      for (int i=0; i<mipmapLevelWidth * 3; i++) {
+        char tmp = pixels[j * mipmapLevelWidth * 3 + i];
+        pixels[j * mipmapLevelWidth * 3 + i] = pixels[(mipmapLevelHeight - j - 1) * mipmapLevelWidth * 3 + i];
+        pixels[(mipmapLevelHeight - j - 1) * mipmapLevelWidth * 3 + i] = tmp;
+      }
+    }
+
+
+    stbi_write_png("./ob.png", mipmapLevelWidth, mipmapLevelHeight, 3, pixels, 3 * mipmapLevelWidth);
+    free(pixels);
   }
 
 }
@@ -636,7 +667,7 @@ void bind_texture(GLuint *texture, std::string &location) {
   // Load image
   int width, height, nrChannels;
   unsigned char *data =
-      stbi_load(location.c_str(), &width, &height, &nrChannels, 0);
+      stbi_load(location.c_str(), &width, &height, &nrChannels, 3);
   if (data) {
     // k_means_clustering(data, width, height, nrChannels); // TODO: Abstract this into a lambda
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB,
@@ -713,10 +744,22 @@ void save_scene(const char *filename, struct scene *scene, GLuint texture) {
   // std::cout << mipmapLevelHeight << std::endl;
 
   // Times by 3 for RGB
-  int *pixels = new int[mipmapLevelWidth * mipmapLevelHeight * 3];
-
+  char *pixels = new char[mipmapLevelWidth * mipmapLevelHeight * 3];
   glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+  glFinish();
+
+  for (int j=0; j<mipmapLevelHeight / 2; j++) {
+    for (int i=0; i<mipmapLevelWidth * 3; i++) {
+      char tmp = pixels[j * mipmapLevelWidth * 3 + i];
+      pixels[j * mipmapLevelWidth * 3 + i] = pixels[(mipmapLevelHeight - j - 1) * mipmapLevelWidth * 3 + i];
+      pixels[(mipmapLevelHeight - j - 1) * mipmapLevelWidth * 3 + i] = tmp;
+    }
+  }
+
+
   stbi_write_png(filename, mipmapLevelWidth, mipmapLevelHeight, 3, pixels, 3 * mipmapLevelWidth);
+  free(pixels);
 }
 
 void terminate_context() {
