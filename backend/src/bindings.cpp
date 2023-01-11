@@ -15,7 +15,6 @@ void render_scene_c(struct scene *scene) {
   render_scene(scene);
 }
 void save_scene_c(struct scene *scene, const char *str) {
-  std::cout << "hello" << std::endl;
   check_context();
   save_scene(str, scene, context->sceneTexture);
 }

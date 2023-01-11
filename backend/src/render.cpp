@@ -54,14 +54,14 @@ int test_bed(double x, double y, double z, double pitch, double yaw,
   scene.camera.roll = roll;
 
   // Seperate Load img function
-  set_target_img("/backend/src/images/real_road.jpg", false);
+  set_target_img("/images/9.png", true);
 
   while (!glfwWindowShouldClose(context->window)) {
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->targetTexture);
     }
     // Renders into sceneFBO where the texture is in sceneTexture
-    // render_scene(&scene);
+    render_scene(&scene);
 
     for (int i = 0; i < 120; i++) {
       render_to_screen(context->sceneTexture);
@@ -181,13 +181,6 @@ void init_context() {
   //                               { 255., 255., 255. } };
 
   memcpy(context->target_colors, target_colors, sizeof(float) * 9);
-
-  for (int i=0; i<3; i++) {
-    for (int j=0; j<3; j++) {
-      std::cout << context->target_colors[i][j] << " ";
-    }
-    std::cout << std::endl;
-  }
 
 #ifdef OGL4
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);

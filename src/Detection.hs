@@ -92,12 +92,12 @@ emptyRoadEnv = #x := [] <:> #y := [] <:> #z := [] <:> #pitch := [] <:> #roll := 
 
 initRoadSample :: (Observables env '["x", "y", "z", "pitch", "roll", "yaw"] Double) => Model env sig m Scene
 initRoadSample = do
-  x <- uniform (-0.5) 0.5 #x
-  y <- uniform 0.05 0.5 #y
-  z <- uniform (-0.5) 0.5 #z
-  pitch <- uniform (-0.3) 0.3 #pitch
-  yaw <- uniform (-0.3) 0.3 #yaw
-  roll <- uniform (-0.3) 0.3 #roll
+  x <- uniform (-0.2) 0.2 #x
+  y <- uniform 0.1 0.2 #y
+  z <- uniform (-0.2) 0.2 #z
+  pitch <- uniform (-0.2) 0.2 #pitch
+  yaw <- uniform (-0.2) 0.2 #yaw
+  roll <- uniform (-0.2) 0.2 #roll
   return $ Scene { camera = Camera {x=x, y=y, pitch=pitch, z=z, yaw=yaw, roll=roll} }
 
 
@@ -138,7 +138,6 @@ sampleNormal mean = normal' mean 0.1
 --- Run training loop
 trainModel :: FilePath -> Int -> IO (Scene, Double)
 trainModel image seed = do
-    print image
     string <- newCString image
     setTargetImg string
 
@@ -207,15 +206,16 @@ syntheticBenchmark output run seed = do
       mZ     <- ask @RoadEnv #z
       mPitch <- ask @RoadEnv #pitch
       mRoll  <- ask @RoadEnv #roll
+      mYaw   <- ask @RoadEnv #yaw
 
-      return $ case (mX, mY, mZ, mPitch, mRoll) of
-        (Just x, Just y, Just z, Just pitch, Just roll) -> Just $ Scene {
+      return $ case (mX, mY, mZ, mPitch, mRoll, mYaw) of
+        (Just x, Just y, Just z, Just pitch, Just roll, Just yaw) -> Just $ Scene {
           camera = Camera {
               x = x,
               y = y,
               z = z,
               pitch = pitch,
-              yaw = 0.0,
+              yaw = yaw,
               roll = roll
           }
         }
@@ -268,15 +268,11 @@ runBenchmark output seed runs = do
 
     writeFile (output ++ "/results.csv") outputString
 
-
-
     return ()
 
 
 runRoadMarkings :: String -> String -> IO ()
 runRoadMarkings input output  = do
-    putStrLn "Running"
-    print input
     files <- getImagesInPath input
     let filePaths = map (\x -> input ++ "/" ++ x) files
 
@@ -331,6 +327,8 @@ main :: IO ()
 main = do
     args <- cmdArgsRun mode
     execute args
+
+-- main = testBed (-4.594700399497886e-2) 0.2954725183496418 0.35187434809837514 (-4.192605540902633e-2) (1.0878650823870462e-2) (-2.4195622622752988e-2)
 
 -- main :: IO Int32
 -- main = saveScenes "./" [("0.png", Scene {camera = Camera {x = 0.07, y = 0.15, z = 0.1, yaw = 0.05, pitch = -0.15, roll = 0.0}})]
